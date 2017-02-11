@@ -1,7 +1,7 @@
 use super::*;
 
 fn foo() -> Result<(), Failure> {
-    failed!("foo");
+    failed!("foo")?;
     Ok(())
 }
 

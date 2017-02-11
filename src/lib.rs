@@ -4,13 +4,60 @@ use std::error::Error;
 #[macro_export]
 macro_rules! failed {
     ($reason:expr) => {
-        let location = $crate::Location::new(module_path!(), file!(), line!());
-        let failure = $crate::Failure::with_location($reason, location);
-        Err(failure)?
+        {
+            let location = $crate::Location::new(module_path!(), file!(), line!(), String::new());
+            let mut failure = $crate::Failure::new($reason);
+            failure.trace_mut().add_location(location);
+            Err(failure)
+        }
     };
     ($fmt:expr, $($arg:tt)*) => {
-        let reason = format!($fmt, $($arg)*);
-        failed!(reason)
+        {
+            let reason = format!($fmt, $($arg)*);
+            failed!(reason)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! fail_if {
+    ($condition:expr, $reason:expr) => {
+        if $condition {
+            failed!($reason)
+        } else {
+            Ok(())
+        }
+    };
+    ($condition:expr, $fmt:expr, $($arg:tt)*) => {
+        if $condition {
+            failed!($fmt, $($arg)*)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! fail_if_err {
+    ($expr:expr) => {
+        $expr.map_err(|e| {
+            let location = $crate::Location::new(module_path!(), file!(), line!(), String::new());
+            let mut failure = $crate::MaybeFailure::into_failure(e);
+            failure.trace_mut().add_location(location);
+            failure
+        })
+    };
+    ($expr:expr, $message:expr) => {
+        fail_if_err!($expr, $message, )
+    };
+    ($expr:expr, $fmt:expr, $($arg:tt)*) => {
+        $expr.map_err(|e| {
+            let message = format!($fmt, $($arg)*);
+            let location = $crate::Location::new(module_path!(), file!(), line!(), message);
+            let mut failure = $crate::MaybeFailure::into_failure(e);
+            failure.trace_mut().add_location(location);
+            failure
+        })
     }
 }
 
@@ -19,7 +66,7 @@ macro_rules! may_fail {
     ($expr:expr) => {
         $expr.map_err(|mut e| {
             $crate::MaybeFailure::save_location_if_failure(&mut e, || {
-                $crate::Location::new(module_path!(), file!(), line!())
+                $crate::Location::new(module_path!(), file!(), line!(), String::new())
             });
             e
         })
@@ -31,70 +78,30 @@ macro_rules! may_fail {
         $expr.map_err(|mut e| {
             $crate::MaybeFailure::save_location_if_failure(&mut e, || {
                 let message = format!($fmt, $($arg)*);
-                $crate::Location::with_message(module_path!(), file!(), line!(), message)
+                $crate::Location::new(module_path!(), file!(), line!(), message)
             });
             e
         })
     }
 }
 
-#[macro_export]
-macro_rules! map_err_to_failure {
-    ($expr:expr) => {
-        $expr.map_err(|e| {
-            let location = $crate::Location::new(module_path!(), file!(), line!());
-            $crate::Failure::with_location(e, location)
-        })
-    };
-    ($expr:expr, $message:expr) => {
-        map_err_to_failure!($expr, $message, )
-    };
-    ($expr:expr, $fmt:expr, $($arg:tt)*) => {
-        $expr.map_err(|e| {
-            let message = format!($fmt, $($arg)*);
-            let location = $crate::Location::with_message(module_path!(), file!(), line!(), message);
-            $crate::Failure::with_location(e, location)
-        })
-    }
-}
-
-#[macro_export]
-macro_rules! ensure_err_to_be_failure {
-    ($expr:expr) => {
-        $expr.map_err(|e| {
-            let location = $crate::Location::new(module_path!(), file!(), line!());
-            let mut failure = $crate::MaybeFailure::into_failure(e);
-            failure.trace_mut().add_location(location);
-            failure
-        })
-    };
-    ($expr:expr, $message:expr) => {
-        ensure_err_to_be_failure!($expr, $message, )
-    };
-    ($expr:expr, $fmt:expr, $($arg:tt)*) => {
-        $expr.map_err(|e| {
-            let message = format!($fmt, $($arg)*);
-            let location = $crate::Location::with_message(module_path!(), file!(), line!(), message);
-            let mut failure = $crate::MaybeFailure::into_failure(e);
-            failure.trace_mut().add_location(location);
-            failure
-        })
-    }
-}
-
 pub trait MaybeFailure: Sized {
     fn try_as_failure_mut(&mut self) -> Option<&mut Failure>;
-    fn save_location_if_failure<F>(&mut self, f: F) where F: FnOnce() -> Location {
+    fn save_location_if_failure<F>(&mut self, f: F)
+        where F: FnOnce() -> Location
+    {
         if let Some(failure) = self.try_as_failure_mut() {
             let location = f();
             failure.trace_mut().add_location(location);
         }
     }
     fn try_into_failure(self) -> Result<Failure, Self>;
-    fn into_failure(self) -> Failure where Self: Into<Box<Error + Send + Sync>>{
+    fn into_failure(self) -> Failure
+        where Self: Into<Box<Error + Send + Sync>>
+    {
         match self.try_into_failure() {
             Ok(f) => f,
-            Err(e) => Failure::new(e)
+            Err(e) => Failure::new(e),
         }
     }
 }
@@ -104,6 +111,22 @@ impl MaybeFailure for Failure {
     }
     fn try_into_failure(self) -> Result<Failure, Self> {
         Ok(self)
+    }
+}
+impl MaybeFailure for Option<Failure> {
+    fn try_as_failure_mut(&mut self) -> Option<&mut Failure> {
+        self.as_mut()
+    }
+    fn try_into_failure(self) -> Result<Failure, Self> {
+        self.ok_or(None)
+    }
+}
+impl<T> MaybeFailure for Result<T, Failure> {
+    fn try_as_failure_mut(&mut self) -> Option<&mut Failure> {
+        self.as_mut().err()
+    }
+    fn try_into_failure(self) -> Result<Failure, Self> {
+        if let Err(f) = self { Ok(f) } else { Err(self) }
     }
 }
 
@@ -119,14 +142,6 @@ impl Failure {
         Failure {
             reason: reason.into(),
             trace: Trace(vec![]),
-        }
-    }
-    pub fn with_location<E>(reason: E, location: Location) -> Self
-        where E: Into<Box<Error + Send + Sync>>
-    {
-        Failure {
-            reason: reason.into(),
-            trace: Trace(vec![location]),
         }
     }
     pub fn reason(&self) -> &Error {
@@ -147,12 +162,7 @@ impl fmt::Display for Failure {
             writeln!(f, "")?;
             writeln!(f, "  TRACE:")?;
             for (i, l) in self.trace.locations().iter().enumerate() {
-                write!(f,
-                       "    [{}] {}#{}:{}",
-                       i,
-                       l.module_path,
-                       l.file,
-                       l.line)?;
+                write!(f, "    [{}] {}#{}:{}", i, l.module_path, l.file, l.line)?;
                 if l.message.is_empty() {
                     writeln!(f, "")?;
                 } else {
@@ -194,20 +204,13 @@ pub struct Location {
     message: String,
 }
 impl Location {
-    pub fn with_message(module_path: &'static str,
-                        file: &'static str,
-                        line: u32,
-                        message: String)
-                        -> Self {
+    pub fn new(module_path: &'static str, file: &'static str, line: u32, message: String) -> Self {
         Location {
             module_path: module_path,
             file: file,
             line: line,
             message: message,
         }
-    }
-    pub fn new(module_path: &'static str, file: &'static str, line: u32) -> Self {
-        Self::with_message(module_path, file, line, String::new())
     }
     pub fn module_path(&self) -> &'static str {
         self.module_path
