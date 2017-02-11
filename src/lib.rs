@@ -113,20 +113,39 @@ impl MaybeFailure for Failure {
         Ok(self)
     }
 }
-impl MaybeFailure for Option<Failure> {
+impl<E: MaybeFailure> MaybeFailure for Option<E> {
     fn try_as_failure_mut(&mut self) -> Option<&mut Failure> {
-        self.as_mut()
+        self.as_mut().and_then(|e| e.try_as_failure_mut())
     }
     fn try_into_failure(self) -> Result<Failure, Self> {
-        self.ok_or(None)
+        if let Some(e) = self {
+            e.try_into_failure().map_err(Some)
+        } else {
+            Err(None)
+        }
     }
 }
-impl<T> MaybeFailure for Result<T, Failure> {
+impl<T, E: MaybeFailure> MaybeFailure for Result<T, E> {
     fn try_as_failure_mut(&mut self) -> Option<&mut Failure> {
-        self.as_mut().err()
+        self.as_mut().err().and_then(|e| e.try_as_failure_mut())
     }
     fn try_into_failure(self) -> Result<Failure, Self> {
-        if let Err(f) = self { Ok(f) } else { Err(self) }
+        if let Err(f) = self {
+            f.try_into_failure().map_err(Err)
+        } else {
+            Err(self)
+        }
+    }
+}
+impl<T, E: MaybeFailure> MaybeFailure for (T, E) {
+    fn try_as_failure_mut(&mut self) -> Option<&mut Failure> {
+        self.1.try_as_failure_mut()
+    }
+    fn try_into_failure(self) -> Result<Failure, Self> {
+        match self.1.try_into_failure() {
+            Ok(f) => Ok(f),
+            Err(e) => Err((self.0, e)),
+        }
     }
 }
 
