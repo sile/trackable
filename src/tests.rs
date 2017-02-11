@@ -6,7 +6,7 @@ fn foo() -> Result<(), Failure> {
 }
 
 fn bar(input: usize) -> Result<(), Failure> {
-    trace_failure!(foo(), "input={}", input)?;
+    may_fail!(foo(), "input={}", input)?;
     Ok(())
 }
 
