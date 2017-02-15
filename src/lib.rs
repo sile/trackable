@@ -21,6 +21,9 @@ macro_rules! failed {
 
 #[macro_export]
 macro_rules! fail_if {
+    ($condition:expr) => {
+        fail_if!($condition, "failed due to `{}`", stringfy($condition))
+    };
     ($condition:expr, $reason:expr) => {
         if $condition {
             failed!($reason)
@@ -33,6 +36,66 @@ macro_rules! fail_if {
             failed!($fmt, $($arg)*)
         } else {
             Ok(())
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! fail_if_eq {
+    ($left:expr, $right:expr) => {
+        {
+            let left = $left;
+            let right = $right;
+            if left == right {
+                failed!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`)", left, right)
+            } else {
+                Ok(())
+            }
+        }
+    };
+    ($left:expr, $right:expr, $fmt:expr) => {
+        fail_if_eq!($left, $right, $fmt, )
+    };
+    ($left:expr, $right:expr, $fmt:expr, $($arg:tt)*) => {
+        {
+            let left = $left;
+            let right = $right;
+            if left == right {
+                failed!(concat!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`): ", $fmt),
+                        left, right, $($arg)*)
+            } else {
+                Ok(())
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! fail_if_ne {
+    ($left:expr, $right:expr) => {
+        {
+            let left = $left;
+            let right = $right;
+            if left != right {
+                failed!("assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`)", left, right)
+            } else {
+                Ok(())
+            }
+        }
+    };
+    ($left:expr, $right:expr, $fmt:expr) => {
+        fail_if_ne!($left, $right, $fmt, )
+    };
+    ($left:expr, $right:expr, $fmt:expr, $($arg:tt)*) => {
+        {
+            let left = $left;
+            let right = $right;
+            if left != right {
+                failed!(concat!("assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`): ", $fmt),
+                        left, right, $($arg)*)
+            } else {
+                Ok(())
+            }
         }
     }
 }
