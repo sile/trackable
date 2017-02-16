@@ -1,5 +1,5 @@
 [package]
-name = "failure"
+name = "track_err"
 version = "0.0.2"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 

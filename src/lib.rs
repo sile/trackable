@@ -12,7 +12,7 @@ macro_rules! fail_if {
 #[macro_export]
 macro_rules! fail_if_ne {
     ($a:expr, $b:expr, $e:expr) => {
-        track_assert!($a == $b, $e)
+        track_assert_not!($a != $b, $e)
     }
 }
 
@@ -28,17 +28,18 @@ macro_rules! track_assert_not {
     ($cond:expr, $kind:expr) => {
         {
             if $cond {
-                let e = track_err!($kind);
+                let e = track_err!($crate::Error::from($kind));
                 Err(e)
             } else {
                 Ok(())
             }
         }
     };
-    ($cond:expr, $kind:expr, $msg:expr) => {
+    ($cond:expr, $kind:expr, $cause:expr) => {
         {
             if $cond {
-                let e = track_err!($kind, $msg);
+                use $crate::ErrorKindExt;
+                let e = track_err!($kind.cause($cause));
                  Err(e)
             } else {
                 Ok(())
@@ -48,7 +49,9 @@ macro_rules! track_assert_not {
     ($cond:expr, $kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
             if $cond {
-                let e = track_err!($kind, $fmt, $($arg)*);
+                use $crate::ErrorKindExt;
+                let message = format!($fmt, $($arg)*);
+                let e = track_err!($kind.cause(message));
                 Err(e)
             } else {
                 Ok(())
@@ -135,7 +138,7 @@ impl TrackingNumber {
     pub fn new() -> Self {
         TrackingNumber(rand::random())
     }
-    pub fn as_u64(&self) -> u64 {
+    pub fn value(&self) -> u64 {
         self.0
     }
 }
@@ -145,6 +148,39 @@ impl fmt::Display for TrackingNumber {
     }
 }
 
+pub trait ErrorKindExt: ErrorKind {
+    fn cause<E>(self, error: E) -> Error<Self>
+        where Self: Sized,
+              E: Into<BoxError>
+    {
+        Error::new(self, error.into())
+    }
+    // TODO: automatically ...
+    fn takes_over<K>(self, _from: Error<K>) -> Error<Self>
+        where Self: Sized,
+              K: ErrorKind
+    {
+        // TODO
+        // let do_track = self.is_tracking_needed() | from.is_tracking_enabled()
+        panic!()
+    }
+    // pub fn take_over<J>(kind: K, from: Error<J>) -> Self
+    //     where J: Into<BoxErrorKind>
+    // {
+    //     let mut history = from.history;
+    //     if let Some(ref mut history) = history {
+    //         history.add(TrackItem::TakeOver(from.kind.into()));
+    //     }
+    //     Error {
+    //         kind: kind,
+    //         cause: from.cause,
+    //         history: history,
+    //         tracking_number: from.tracking_number,
+    //     }
+    // }
+}
+impl<T: ErrorKind> ErrorKindExt for T {}
+
 pub trait ErrorKind: fmt::Debug {
     fn description(&self) -> &str {
         "An error"
@@ -152,22 +188,8 @@ pub trait ErrorKind: fmt::Debug {
     fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
-    fn enable_tracking(&self) -> bool {
-        true
-    }
     fn is_tracking_needed(&self) -> bool {
         true
-    }
-    fn cause<E>(self, error: E) -> Error<Self>
-        where Self: Sized,
-              E: Into<BoxError>
-    {
-        Error::new(self, error.into())
-    }
-    fn take_over<K>(self, _from: Error<K>, _locatin: Location) -> Error<Self>
-        where Self: Sized
-    {
-        panic!()
     }
 }
 
@@ -198,6 +220,7 @@ impl<K: ErrorKind> Trackable for Error<K> {
         }
     }
 }
+
 // TODO
 // impl<K: ErrorKind> Trackable for Option<Error<K>> {
 //     fn track_location(&mut self, location: Location) {
@@ -214,6 +237,7 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
     }
 }
 
+// TODO: imporove
 #[derive(Debug, Clone)]
 struct History(Vec<Location>);
 impl History {
@@ -278,10 +302,11 @@ impl<K: ErrorKind> Error<K> {
         }
     }
     pub fn from_cause<E>(cause: E) -> Self
-        where E: Into<BoxError>,
-              K: Default
+        where K: for<'a> From<&'a E>,
+              E: Into<BoxError>
     {
-        Error::new(K::default(), cause)
+        let kind = K::from(&cause);
+        Error::new(kind, cause)
     }
     pub fn from_kind(kind: K) -> Self {
         let history = Self::init_history(&kind);
@@ -292,55 +317,25 @@ impl<K: ErrorKind> Error<K> {
             tracking_number: None,
         }
     }
-    // pub fn take_over<J>(kind: K, from: Error<J>) -> Self
-    //     where J: Into<BoxErrorKind>
-    // {
-    //     let mut history = from.history;
-    //     if let Some(ref mut history) = history {
-    //         history.add(TrackItem::TakeOver(from.kind.into()));
-    //     }
-    //     Error {
-    //         kind: kind,
-    //         cause: from.cause,
-    //         history: history,
-    //         tracking_number: from.tracking_number,
-    //     }
-    // }
-
-    pub fn assign_tracking_number(&mut self) -> TrackingNumber {
-        if self.tracking_number.is_none() {
-            self.tracking_number = Some(TrackingNumber::new());
-        }
-        self.tracking_number().unwrap()
-    }
-    pub fn tracking_number(&self) -> Option<TrackingNumber> {
-        self.tracking_number
-    }
     pub fn kind(&self) -> &K {
         &self.kind
     }
-    pub fn kind_mut(&mut self) -> &mut K {
-        &mut self.kind
-    }
-
-    pub fn caused_by<T: error::Error + 'static>(&self) -> Option<&T> {
+    pub fn concrete_cause<T>(&self) -> Option<&T>
+        where T: error::Error + 'static
+    {
         self.cause.as_ref().and_then(|c| c.downcast_ref())
     }
 
-    pub fn caused_by_mut<T: error::Error + 'static>(&mut self) -> Option<&mut T> {
-        self.cause.as_mut().and_then(|c| c.downcast_mut())
-    }
-
-    // TOOD: &History
+    // TODO: &History
     pub fn history(&self) -> &[Location] {
         self.history.as_ref().map_or(&[][..], |t| t.locations())
     }
-    // TODO: take_history, take_cause, take_kind(where K: Default)
 
     pub fn is_tracking_enabled(&self) -> bool {
         self.history.is_some()
     }
 
+    // TODO: track_err!(e.enable())
     pub fn enable_tracking(&mut self) {
         if self.history.is_none() {
             self.history = Some(History::new());
@@ -354,6 +349,16 @@ impl<K: ErrorKind> Error<K> {
 
     #[cfg(feature = "force-tracking")]
     pub fn disable_tracking(&mut self) {}
+
+    pub fn assign_tracking_number(&mut self) -> TrackingNumber {
+        if self.tracking_number.is_none() {
+            self.tracking_number = Some(TrackingNumber::new());
+        }
+        self.tracking_number().unwrap()
+    }
+    pub fn tracking_number(&self) -> Option<TrackingNumber> {
+        self.tracking_number
+    }
 
     #[cfg(not(feature = "force-tracking"))]
     fn init_history(kind: &K) -> Option<History> {
@@ -385,6 +390,7 @@ impl<K: ErrorKind> fmt::Display for Error<K> {
         if let Some(ref e) = self.cause {
             write!(f, " (caused by; {})", e)?;
         }
+        // TODO: improve
         if self.history.is_some() {
             writeln!(f, "")?;
             writeln!(f, "  TRACE:")?;
