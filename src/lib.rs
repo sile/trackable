@@ -226,8 +226,11 @@ impl Failure {
             trace: Trace(vec![]),
         }
     }
-    pub fn reason(&self) -> &Error {
-        &*self.reason
+    pub fn reason(&self) -> &Box<Error + Send + Sync> {
+        &self.reason
+    }
+    pub fn reason_mut(&mut self) -> &mut Box<Error + Send + Sync> {
+        &mut self.reason
     }
     pub fn trace(&self) -> &Trace {
         &self.trace
