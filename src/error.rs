@@ -4,11 +4,16 @@ use std::error::Error;
 
 use super::{TrackingNumber, Location, Trackable};
 
+/// Boxed `Error` object.
 pub type BoxError = Box<Error + Send + Sync>;
+
+/// Boxed `ErrorKind` object.
 pub type BoxErrorKind = Box<ErrorKind + Send + Sync>;
 
+/// `History` type specialized for `TrackableError`.
 pub type History = ::History<Event>;
 
+/// Built-in `ErrorKind` implementation which represents opaque errors.
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Failed;
 impl ErrorKind for Failed {}
@@ -28,6 +33,7 @@ impl<'a> IntoTrackableError<&'a str> for Failed {
     }
 }
 
+/// `TrackableError` type specialized for `Failed`.
 pub type Failure = TrackableError<Failed>;
 
 pub trait ErrorKindExt: ErrorKind {
