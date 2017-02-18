@@ -76,7 +76,7 @@ macro_rules! track {
 /// # let v =
 /// expr.map_err(|e| {
 ///     // Converts to a trackable error.
-///     let e = trackable::error::ErrorKindExt::error(e);
+///     let e = trackable::error::TrackableError::from_cause(e);
 ///
 ///     // Saves this location in the history of `e`.
 ///     track!(e)
@@ -105,7 +105,7 @@ macro_rules! track_try {
     ($expr:expr $(, $arg:tt)*) => {
         match $expr {
             Err(e) => {
-                let e = track!($crate::error::ErrorKindExt::error(e) $(, $arg)*);
+                let e = track!($crate::error::TrackableError::from_cause(e) $(, $arg)*);
                 Err(e)?
             }
             Ok(v) => {
@@ -160,7 +160,7 @@ macro_rules! track_try {
 #[macro_export]
 macro_rules! track_err {
     ($expr:expr $(, $arg:tt)*) => {
-        $expr.map_err(|e| track!($crate::error::ErrorKindExt::error(e) $(, $arg)*))
+        $expr.map_err(|e| track!($crate::error::TrackableError::from_cause(e) $(, $arg)*))
     };
 }
 
