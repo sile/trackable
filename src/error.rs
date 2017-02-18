@@ -166,11 +166,11 @@ impl<K: ErrorKind> Error for TrackableError<K> {
         }
     }
 }
-impl<K: ErrorKind> Trackable for TrackableError<K> {
+impl<K> Trackable for TrackableError<K> {
     type Event = Event;
     fn assign_tracking_number(&mut self) {
         if self.tracking_number.is_none() {
-            self.tracking_number = Some(TrackingNumber::assign());
+            self.tracking_number = Some(TrackingNumber::generate());
         }
     }
     fn tracking_number(&self) -> Option<TrackingNumber> {
@@ -197,6 +197,31 @@ impl<K: ErrorKind> Trackable for TrackableError<K> {
         self.history.as_mut()
     }
 }
+impl<T, K> Trackable for Result<T, TrackableError<K>> {
+    type Event = Event;
+    fn assign_tracking_number(&mut self) {
+        self.as_mut().err().map(|t| t.assign_tracking_number());
+    }
+    fn tracking_number(&self) -> Option<TrackingNumber> {
+        self.as_ref().err().and_then(|t| t.tracking_number())
+    }
+    fn enable_tracking(self) -> Self
+        where Self: Sized
+    {
+        self.map_err(|t| t.enable_tracking())
+    }
+    fn disable_tracking(self) -> Self
+        where Self: Sized
+    {
+        self.map_err(|t| t.disable_tracking())
+    }
+    fn history(&self) -> Option<&History> {
+        self.as_ref().err().and_then(|t| t.history())
+    }
+    fn history_mut(&mut self) -> Option<&mut History> {
+        self.as_mut().err().and_then(|t| t.history_mut())
+    }
+}
 
 pub trait IntoTrackableError<From>: Sized {
     fn into_trackable_error(f: From) -> TrackableError<Self>;
@@ -220,12 +245,7 @@ pub enum Event {
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Event::Track(ref l) => {
-                write!(f, "at {}:{}:{}", l.crate_name(), l.file(), l.line())?;
-                if !l.message().is_empty() {
-                    write!(f, "; {}", l.message())?;
-                }
-            }
+            Event::Track(ref l) => write!(f, "{}", l)?,
             Event::TakeOver(ref k) => write!(f, "takes over from `{:?}`", k)?,
         }
         Ok(())

@@ -5,23 +5,122 @@ use std::fmt;
 pub mod error;
 mod macros;
 
+/// This trait allows to track an instance of an implementation type.
+///
+/// A trackable instance has following three properties:
+///
+/// 1. **Tracking history**:
+///   - It manages own backtrace-like (but more general)
+///     [history](struct.History.html) for tracking.
+///   - You can add entries to the history by calling tracking macros
+///     (e.g., [track!](macro.track.html), [track_try!](macro.track_try.html)).
+/// 2. **Tracking mode**:
+///   - You can enable (resp. disable) tracking by calling
+///     `enable_tracking` (resp. `disable_tracking`) method of this trait.
+///   - If some instances of a type are not needed to be trackable (e.g., non critical errors),
+///     it may be useful to disable tracking of those for reducing runtime overhead.
+/// 3. **Tracking number**:
+///   - It is possible to assign a randomly generated [tracking number](struct.TrackingNumber.html)
+///     to a `Trackable` instance by calling `assign_tracking_number` method.
+///
+/// See [TrackableError](error/struct.TrackableError.html) as a typical implementaion of this trait.
+///
+/// # Examples
+///
+/// Defining a trackable type.
+///
+/// ```
+/// #[macro_use]
+/// extern crate trackable;
+///
+/// use trackable::{Trackable, History, Location, TrackingNumber};
+///
+/// #[derive(Default)]
+/// struct TrackableObject {
+///     history: Option<History<Location>>,
+///     tracking_number: Option<TrackingNumber>,
+/// }
+/// impl Trackable for TrackableObject {
+///     type Event = Location;
+///     fn assign_tracking_number(&mut self) {
+///         if self.tracking_number.is_none() {
+///             self.tracking_number = Some(TrackingNumber::generate());
+///         }
+///     }
+///     fn tracking_number(&self) -> Option<TrackingNumber> {
+///         self.tracking_number
+///     }
+///     fn enable_tracking(mut self) -> Self where Self: Sized {
+///         if self.history.is_none() {
+///             self.history = Some(History::new());
+///         }
+///         self
+///     }
+///     fn disable_tracking(mut self) -> Self where Self: Sized {
+///         self.history = None;
+///         self
+///     }
+///     fn history(&self) -> Option<&History<Self::Event>> {
+///         self.history.as_ref()
+///     }
+///     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
+///         self.history.as_mut()
+///     }
+/// }
+///
+/// fn main() {
+///     let o = TrackableObject::default();
+///     let o = track!(o);  // Ignored
+///
+///     let o = o.enable_tracking();
+///     let o = track!(o);
+///     let o = track!(o, "Hello");
+///     let o = track!(o, "Hello {}", "World!");
+///
+///     assert_eq!(format!("\n{}", o.history().unwrap()), r#"
+/// HISTORY:
+///   [0] at rust_out:<anon>:44
+///   [1] at rust_out:<anon>:45; Hello
+///   [2] at rust_out:<anon>:46; Hello World!
+/// "#);
+/// }
+/// ```
 pub trait Trackable {
+    /// Event type which a history of an instance of this type can have.
     type Event: From<Location>;
+
+    /// Add an event into the tail of the history of this instance.
+    ///
+    /// Typically, this is called via [track!](macro.track.html) macro.
     fn track<F>(&mut self, f: F)
         where F: FnOnce() -> Self::Event
     {
         self.history_mut().map(|h| h.add(f()));
     }
 
+    /// Assigns a randomly generated [tracking number](struct.TrackingNumber.html) to this instance.
+    ///
+    /// Note that implementations must simply ignore the second and subsequent calls of this method.
     fn assign_tracking_number(&mut self);
+
+    /// Returns the tracking number of this instance if it has been assigned.
     fn tracking_number(&self) -> Option<TrackingNumber>;
+
+    /// Returns `true` if tracking of this instance is enabled, otherwise `false`.
     fn in_tracking(&self) -> bool {
         self.history().is_some()
     }
+
+    /// Enables tracking of this instance.
     fn enable_tracking(self) -> Self where Self: Sized;
+
+    /// Disables tracking of this intance.
     fn disable_tracking(self) -> Self where Self: Sized;
 
+    /// Returns the reference of the tracking history of this instance.
     fn history(&self) -> Option<&History<Self::Event>>;
+
+    /// Returns the mutable reference of the tracking history of this instance.
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>>;
 }
 impl<T: Trackable> Trackable for Option<T> {
@@ -48,31 +147,6 @@ impl<T: Trackable> Trackable for Option<T> {
     }
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
         self.as_mut().and_then(|t| t.history_mut())
-    }
-}
-impl<T, K: error::ErrorKind> Trackable for Result<T, error::TrackableError<K>> {
-    type Event = <error::TrackableError<K> as Trackable>::Event;
-    fn assign_tracking_number(&mut self) {
-        self.as_mut().err().map(|t| t.assign_tracking_number());
-    }
-    fn tracking_number(&self) -> Option<TrackingNumber> {
-        self.as_ref().err().and_then(|t| t.tracking_number())
-    }
-    fn enable_tracking(self) -> Self
-        where Self: Sized
-    {
-        self.map_err(|t| t.enable_tracking())
-    }
-    fn disable_tracking(self) -> Self
-        where Self: Sized
-    {
-        self.map_err(|t| t.disable_tracking())
-    }
-    fn history(&self) -> Option<&History<Self::Event>> {
-        self.as_ref().err().and_then(|t| t.history())
-    }
-    fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
-        self.as_mut().err().and_then(|t| t.history_mut())
     }
 }
 
@@ -190,6 +264,19 @@ impl Location {
         &self.message
     }
 }
+impl fmt::Display for Location {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "at {}:{}:{}",
+               self.crate_name(),
+               self.file(),
+               self.line())?;
+        if !self.message().is_empty() {
+            write!(f, "; {}", self.message())?;
+        }
+        Ok(())
+    }
+}
 
 /// Randomly generated tracking number.
 ///
@@ -203,8 +290,8 @@ impl Location {
 /// ```no_run
 /// use trackable::TrackingNumber;
 ///
-/// let n0 = TrackingNumber::assign();
-/// let n1 = TrackingNumber::assign();
+/// let n0 = TrackingNumber::generate();
+/// let n1 = TrackingNumber::generate();
 ///
 /// // NOTE: The actual values will change every time the below code is executed.
 /// assert_ne!(n0, n1);
@@ -214,8 +301,8 @@ impl Location {
 #[derive(Debug, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct TrackingNumber(pub u64);
 impl TrackingNumber {
-    /// Creates a new tracking number.
-    pub fn assign() -> Self {
+    /// Generates a new tracking number.
+    pub fn generate() -> Self {
         TrackingNumber(rand::random())
     }
 }
