@@ -11,7 +11,7 @@ trackable
 
 Below code is an example that tracks failure of an I/O operation:
 
-```
+```rust
 #[macro_use]
 extern crate trackable;
 
