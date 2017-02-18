@@ -1,3 +1,39 @@
+/// Tries to track the current [location](struct.Location.html) into the history of the `$target`.
+///
+/// `$target` must be evaluated to a value which implements [Trackable](trait.Trackable.html) trait.
+///
+/// If `$target.in_tracking()` is `false`, it will simply return the value of `$target` untouched.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # fn main() {
+/// use trackable::error::{Failed, ErrorKindExt};
+///
+/// // Makes a `TrackableError` value
+/// let e = Failed.cause("something wrong");
+/// let e = track!(e);
+///
+/// // `Result<_, TrackableError>` implements `Trackable`
+/// let e: Result<(), _> = Err(e);
+/// let e = track!(e, "This is a note about this location");
+///
+/// // `Option<T: Trackable>` implements `Trackable`
+/// let e = Some(e);
+/// let e = track!(e, "Hello {}", "World!");
+///
+/// assert_eq!(format!("\n{}", e.unwrap().err().unwrap()), r#"
+/// Failed (cause; something wrong)
+/// HISTORY:
+///   [0] at rust_out:<anon>:9
+///   [1] at rust_out:<anon>:13; This is a note about this location
+///   [2] at rust_out:<anon>:17; Hello World!
+/// "#);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! track {
     ($target:expr) => {
@@ -118,7 +154,6 @@ macro_rules! track_try {
 /// HISTORY:
 ///   [0] at rust_out:<anon>:24
 ///   [1] at rust_out:<anon>:25; Hello World!
-///
 /// "#);
 /// # }
 /// ```
@@ -129,6 +164,37 @@ macro_rules! track_err {
     };
 }
 
+/// Error trackable variant of the standard `assert!` macro.
+///
+/// This is a simple wrapper of the `track_panic!` macro.
+/// It will call `track_panic!($error_kind, $($format_arg)+)` if `$cond` is evaluated to `false`.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # fn main() {
+/// use trackable::error::{Failed, Failure};
+///
+/// fn add_positive_f32(a: f32, b: f32) -> Result<f32, Failure> {
+///     track_assert!(a > 0.0 && b > 0.0, Failed);
+///     Ok(a + b)
+/// }
+///
+/// let r = add_positive_f32(3.0, 2.0); // Ok
+/// assert_eq!(r.ok(), Some(5.0));
+///
+/// let r = add_positive_f32(1.0, -2.0); // Err
+/// assert!(r.is_err());
+/// assert_eq!(format!("\n{}", r.err().unwrap()), r#"
+/// Failed (cause; assertion failed: a > 0.0 && b > 0.0)
+/// HISTORY:
+///   [0] at rust_out:<anon>:8
+/// "#);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! track_assert {
     ($cond:expr, $error_kind:expr) => {
@@ -141,6 +207,10 @@ macro_rules! track_assert {
     };
 }
 
+/// Error trackable variant of the standard `assert_ne!` macro.
+///
+/// Conceptually, `track_assert_eq!(left, right, error_kind)` is equivalent to
+/// `track_assert!(left == right, error_kind)`.
 #[macro_export]
 macro_rules! track_assert_eq {
     ($left:expr, $right:expr, $error_kind:expr) => {
@@ -160,6 +230,11 @@ macro_rules! track_assert_eq {
     };
 }
 
+
+/// Error trackable variant of the standard `assert_ne!` macro.
+///
+/// Conceptually, `track_assert_ne!(left, right, error_kind)` is equivalent to
+/// `track_assert!(left != right, error_kind)`.
 #[macro_export]
 macro_rules! track_assert_ne {
     ($left:expr, $right:expr, $error_kind:expr) => {
@@ -179,6 +254,58 @@ macro_rules! track_assert_ne {
     };
 }
 
+/// Error trackable variant of the standard `panic!` macro.
+///
+/// This returns an `TrackableError` object as the result value of the calling function,
+/// instead of aborting the current thread.
+///
+/// Conceptually, `track_panic!(error)` is equivalent to the following code:
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # use trackable::error::{Failed, Failure};
+/// # fn main() { let _ = foo(); }
+/// # fn foo() -> Result<(), Failure> {
+/// use trackable::Trackable;
+/// use trackable::error::TrackableError;
+///
+/// # let error = Failed;
+/// let e = TrackableError::from(error); // Converts to `TrackableError`
+/// let e = e.enable_tracking();         // Forces to enable tracking
+/// let e = track!(e);                   // Tracks this location
+/// Err(e)?;                             // Returns from the current function
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Exapmles
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # fn main() {
+/// use trackable::error::{Failed, Failure};
+///
+/// fn foo<F>(f: F) -> Result<(), Failure> where F: FnOnce() -> Result<(), Failure> { f() }
+///
+/// let e = foo(|| { track_panic!(Failed); Ok(()) }).err().unwrap();
+/// assert_eq!(format!("\n{}", e), r#"
+/// Failed
+/// HISTORY:
+///   [0] at rust_out:<anon>:9
+/// "#);
+///
+/// let e = foo(|| { track_panic!(Failed, "something {}", "wrong"); Ok(()) }).err().unwrap();
+/// assert_eq!(format!("\n{}", e), r#"
+/// Failed (cause; something wrong)
+/// HISTORY:
+///   [0] at rust_out:<anon>:16
+/// "#);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! track_panic {
     ($error:expr) => {

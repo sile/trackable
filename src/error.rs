@@ -16,7 +16,11 @@ pub type History = ::History<Event>;
 /// Built-in `ErrorKind` implementation which represents opaque errors.
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Failed;
-impl ErrorKind for Failed {}
+impl ErrorKind for Failed {
+    fn description(&self) -> &str {
+        "Failed"
+    }
+}
 impl IntoTrackableError<BoxError> for Failed {
     fn into_trackable_error(cause: BoxError) -> Failure {
         Failed.cause(cause)
@@ -145,7 +149,7 @@ impl<K: ErrorKind> fmt::Display for TrackableError<K> {
             write!(f, " #{}", n)?;
         }
         if let Some(ref h) = self.history {
-            writeln!(f, "\n{}", h)?;
+            write!(f, "\n{}", h)?;
         }
         Ok(())
     }
