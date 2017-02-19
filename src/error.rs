@@ -483,16 +483,12 @@ pub enum Event {
 
     /// The old error instance with the kind `BoxErrorKind` was taken over.
     TakeOver(Arc<BoxErrorKind>),
-
-    /// This history has been forked from the origin.
-    Forked,
 }
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Event::Track(ref l) => write!(f, "{}", l)?,
             Event::TakeOver(ref k) => write!(f, "takes over from `{:?}`", k)?,
-            Event::Forked => write!(f, "forked from the original history")?,
         }
         Ok(())
     }
