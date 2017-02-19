@@ -221,7 +221,7 @@ impl<T: Trackable> Trackable for Option<T> {
 ///   [1] event: bar
 /// "#);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct History<Event>(Vec<Event>);
 impl<Event> History<Event> {
     /// Makes an empty history.

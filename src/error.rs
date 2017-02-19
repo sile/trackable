@@ -51,6 +51,7 @@
 //! ```
 use std::fmt;
 use std::error::Error;
+use std::sync::Arc;
 
 use super::{TrackingNumber, Location, Trackable};
 
@@ -113,6 +114,11 @@ pub trait ErrorKind: fmt::Debug {
     /// The default implementation always returns `true`.
     fn is_tracking_needed(&self) -> bool {
         true
+    }
+}
+impl ErrorKind for String {
+    fn description(&self) -> &str {
+        self
     }
 }
 
@@ -196,7 +202,7 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     {
         let mut history = from.history;
         if let Some(ref mut h) = history {
-            h.add(Event::TakeOver(Box::new(from.kind)));
+            h.add(Event::TakeOver(Arc::new(Box::new(from.kind))));
         } else if self.is_tracking_needed() {
             history = Some(History::new());
         }
@@ -263,10 +269,42 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(cause.kind(), std::io::ErrorKind::NotFound);
 /// }
 /// ```
-#[derive(Debug)]
+///
+/// `TrackableError` is cloneable if `K` is so.
+///
+/// ```no_run
+/// #[macro_use]
+/// extern crate trackable;
+///
+/// use trackable::Trackable;
+/// use trackable::error::{Failed, ErrorKindExt};
+///
+/// fn main() {
+///     let mut original = Failed.error();
+///     original.assign_tracking_number();
+///
+///     let original = track!(original, "Hello `original`!");
+///     let forked = original.clone();
+///     let forked = track!(forked, "Hello `forked`!");
+///
+///     assert_eq!(format!("\n{}", original), r#"
+/// Failed #4d6fdaeeb2cc39a2
+/// HISTORY:
+///   [0] at rust_out:<anon>:11; Hello `original`!
+/// "#);
+///
+///     assert_eq!(format!("\n{}", forked), r#"
+/// Failed #4d6fdaeeb2cc39a2
+/// HISTORY:
+///   [0] at rust_out:<anon>:11; Hello `original`!
+///   [1] at rust_out:<anon>:13; Hello `forked`!
+/// "#);
+/// }
+/// ```
+#[derive(Debug, Clone)]
 pub struct TrackableError<K> {
     kind: K,
-    cause: Option<BoxError>,
+    cause: Option<Arc<BoxError>>,
     history: Option<History>,
     tracking_number: Option<TrackingNumber>,
 }
@@ -278,7 +316,7 @@ impl<K: ErrorKind> TrackableError<K> {
         let history = Self::init_history(&kind);
         TrackableError {
             kind: kind,
-            cause: Some(cause.into()),
+            cause: Some(Arc::new(cause.into())),
             history: history,
             tracking_number: None,
         }
@@ -358,7 +396,7 @@ impl<K: ErrorKind> Error for TrackableError<K> {
     }
     fn cause(&self) -> Option<&Error> {
         if let Some(ref e) = self.cause {
-            Some(&**e)
+            Some(&***e)
         } else {
             None
         }
@@ -438,19 +476,23 @@ impl<K: ErrorKind> IntoTrackableError<K> for K {
 }
 
 /// An event that occurred on an instance of `TrackableError`.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Event {
     /// The location was saved in the history of error instance.
     Track(Location),
 
     /// The old error instance with the kind `BoxErrorKind` was taken over.
-    TakeOver(BoxErrorKind),
+    TakeOver(Arc<BoxErrorKind>),
+
+    /// This history has been forked from the origin.
+    Forked,
 }
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Event::Track(ref l) => write!(f, "{}", l)?,
             Event::TakeOver(ref k) => write!(f, "takes over from `{:?}`", k)?,
+            Event::Forked => write!(f, "forked from the original history")?,
         }
         Ok(())
     }
