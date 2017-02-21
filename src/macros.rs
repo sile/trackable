@@ -313,7 +313,7 @@ macro_rules! track_panic {
             use $crate::Trackable;
             let e = $crate::error::TrackableError::from($error).enable_tracking();
             let e = track!(e);
-            Err(e)?;
+            return Err(From::from(e));
         }
     };
     ($error_kind:expr, $($format_arg:tt)+) => {
