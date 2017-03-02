@@ -31,9 +31,9 @@
 //!     assert_eq!(format!("\r{}", error), r#"
 //! Failed (cause; No such file or directory)
 //! HISTORY:
-//!   [0] at rust_out:<anon>:7
-//!   [1] at rust_out:<anon>:12
-//!   [2] at rust_out:<anon>:16
+//!   [0] at <anon>:7
+//!   [1] at <anon>:12
+//!   [2] at <anon>:16
 //! "#);
 //! }
 //! ```
@@ -123,9 +123,9 @@ mod macros;
 ///
 ///     assert_eq!(format!("\n{}", o.history().unwrap()), r#"
 /// HISTORY:
-///   [0] at rust_out:<anon>:44
-///   [1] at rust_out:<anon>:45; Hello
-///   [2] at rust_out:<anon>:46; Hello World!
+///   [0] at <anon>:44
+///   [1] at <anon>:45; Hello
+///   [2] at <anon>:46; Hello World!
 /// "#);
 /// }
 /// ```

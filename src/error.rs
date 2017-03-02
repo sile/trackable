@@ -35,8 +35,8 @@
 //!     assert_eq!(format!("\nError: {}", error), r#"
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
-//!   [0] at rust_out:<anon>:28
-//!   [1] at rust_out:<anon>:29; I passed here
+//!   [0] at <anon>:28
+//!   [1] at <anon>:29; I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
@@ -191,9 +191,9 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     ///   assert_eq!(format!("\nERROR: {}", e), r#"
     /// ERROR: Kind1
     /// HISTORY:
-    ///   [0] at rust_out:<anon>:16
+    ///   [0] at <anon>:16
     ///   [1] takes over from `Kind0`
-    ///   [2] at rust_out:<anon>:19
+    ///   [2] at <anon>:19
     /// "#);
     /// }
     /// ```
@@ -255,8 +255,8 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(format!("\nError: {}", error), r#"
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
-///   [0] at rust_out:<anon>:28
-///   [1] at rust_out:<anon>:29; I passed here
+///   [0] at <anon>:28
+///   [1] at <anon>:29; I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
@@ -290,14 +290,14 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(format!("\n{}", original), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at rust_out:<anon>:11; Hello `original`!
+///   [0] at <anon>:11; Hello `original`!
 /// "#);
 ///
 ///     assert_eq!(format!("\n{}", forked), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at rust_out:<anon>:11; Hello `original`!
-///   [1] at rust_out:<anon>:13; Hello `forked`!
+///   [0] at <anon>:11; Hello `original`!
+///   [1] at <anon>:13; Hello `forked`!
 /// "#);
 /// }
 /// ```
