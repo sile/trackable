@@ -310,11 +310,7 @@ impl Location {
 }
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "at {}:{}:{}",
-               self.crate_name(),
-               self.file(),
-               self.line())?;
+        write!(f, "at {}:{}", self.file(), self.line())?;
         if !self.message().is_empty() {
             write!(f, "; {}", self.message())?;
         }
