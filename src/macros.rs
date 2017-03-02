@@ -323,3 +323,20 @@ macro_rules! track_panic {
         }
     };
 }
+
+/// More human readable variant of the standard `Result::unwrap` method.
+#[macro_export]
+macro_rules! track_unwrap_result {
+    ($expr:expr) => {
+        match track!($expr) {
+            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e); }
+            Ok(v) => { v }
+        }
+    };
+    ($expr:expr, $($format_arg:tt)*) => {
+        match track!($expr, $($format_arg)*) {
+            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e); }
+            Ok(v) => { v }
+        }
+    };
+}
