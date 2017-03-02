@@ -273,7 +273,6 @@ macro_rules! track_assert_ne {
 ///
 /// # let error = Failed;
 /// let e = TrackableError::from(error); // Converts to `TrackableError`
-/// let e = e.enable_tracking();         // Forces to enable tracking
 /// let e = track!(e);                   // Tracks this location
 /// Err(e)?;                             // Returns from the current function
 /// # Ok(())
@@ -311,7 +310,7 @@ macro_rules! track_panic {
     ($error:expr) => {
         {
             use $crate::Trackable;
-            let e = $crate::error::TrackableError::from($error).enable_tracking();
+            let e = $crate::error::TrackableError::from($error);
             let e = track!(e);
             return Err(From::from(e));
         }
