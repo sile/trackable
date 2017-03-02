@@ -279,7 +279,7 @@ macro_rules! track_assert_ne {
 /// # }
 /// ```
 ///
-/// # Exapmles
+/// # Examples
 ///
 /// ```
 /// # #[macro_use]
@@ -325,6 +325,27 @@ macro_rules! track_panic {
 }
 
 /// More human readable variant of the standard `Result::unwrap` method.
+///
+/// # Examples
+///
+/// ```no_run
+/// #[macro_use]
+/// extern crate trackable;
+///
+/// use trackable::error::{Failed, Failure, ErrorKindExt};
+///
+/// fn main() {
+///    let result: Result<(), Failure> = Err(Failed.error());
+///
+///    // Following two expressions are conceptually equivalent.
+///    result.clone().unwrap();
+///    track_unwrap_result!(result.clone());
+///
+///    // `track_unwrap_result!()` can take additional arguments compatible to `format!()`.
+///    result.clone().expect(&format!("Additional information: {}", "foo"));
+///    track_unwrap_result!(result.clone(), "Additional information: {}", "foo");
+/// }
+/// ```
 #[macro_export]
 macro_rules! track_unwrap_result {
     ($expr:expr) => {
