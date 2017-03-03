@@ -338,15 +338,15 @@ macro_rules! track_panic {
 ///
 ///    // Following two expressions are conceptually equivalent.
 ///    result.clone().unwrap();
-///    track_unwrap_result!(result.clone());
+///    track_try_unwrap!(result.clone());
 ///
-///    // `track_unwrap_result!()` can take additional arguments compatible to `format!()`.
+///    // `track_try_unwrap!()` can take additional arguments compatible to `format!()`.
 ///    result.clone().expect(&format!("Additional information: {}", "foo"));
-///    track_unwrap_result!(result.clone(), "Additional information: {}", "foo");
+///    track_try_unwrap!(result.clone(), "Additional information: {}", "foo");
 /// }
 /// ```
 #[macro_export]
-macro_rules! track_unwrap_result {
+macro_rules! track_try_unwrap {
     ($expr:expr) => {
         match track!($expr) {
             Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e); }
