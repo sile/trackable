@@ -309,7 +309,6 @@ macro_rules! track_assert_ne {
 macro_rules! track_panic {
     ($error:expr) => {
         {
-            use $crate::Trackable;
             let e = $crate::error::TrackableError::from($error);
             let e = track!(e);
             return Err(From::from(e));
