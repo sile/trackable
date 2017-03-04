@@ -115,6 +115,14 @@ pub trait ErrorKind: fmt::Debug {
     fn is_tracking_needed(&self) -> bool {
         true
     }
+
+    /// Returns whether the error of this kind is needed
+    /// to be assigned a tracking number automatically.
+    ///
+    /// The default implementation always returns `false`.
+    fn is_assigning_tracking_number_needed(&self) -> bool {
+        false
+    }
 }
 impl ErrorKind for String {
     fn description(&self) -> &str {
@@ -314,11 +322,12 @@ impl<K: ErrorKind> TrackableError<K> {
         where E: Into<BoxError>
     {
         let history = Self::init_history(&kind);
+        let tracking_number = Self::init_tracking_number(&kind);
         TrackableError {
             kind: kind,
             cause: Some(Arc::new(cause.into())),
             history: history,
-            tracking_number: None,
+            tracking_number: tracking_number,
         }
     }
 
@@ -327,11 +336,12 @@ impl<K: ErrorKind> TrackableError<K> {
     /// Note that the returning error has no cause.
     fn from_kind(kind: K) -> Self {
         let history = Self::init_history(&kind);
+        let tracking_number = Self::init_tracking_number(&kind);
         TrackableError {
             kind: kind,
             cause: None,
             history: history,
-            tracking_number: None,
+            tracking_number: tracking_number,
         }
     }
 
@@ -360,6 +370,13 @@ impl<K: ErrorKind> TrackableError<K> {
     fn init_history(kind: &K) -> Option<History> {
         if kind.is_tracking_needed() {
             Some(History::new())
+        } else {
+            None
+        }
+    }
+    fn init_tracking_number(kind: &K) -> Option<TrackingNumber> {
+        if kind.is_assigning_tracking_number_needed() {
+            Some(TrackingNumber::generate())
         } else {
             None
         }
