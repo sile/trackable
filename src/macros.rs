@@ -296,14 +296,14 @@ macro_rules! track_assert_ne {
 ///
 /// fn foo<F>(f: F) -> Result<(), Failure> where F: FnOnce() -> Result<(), Failure> { f() }
 ///
-/// let e = foo(|| { track_panic!(Failed); Ok(()) }).err().unwrap();
+/// let e = foo(|| track_panic!(Failed) ).err().unwrap();
 /// assert_eq!(format!("\n{}", e), r#"
 /// Failed
 /// HISTORY:
 ///   [0] at <anon>:9
 /// "#);
 ///
-/// let e = foo(|| { track_panic!(Failed, "something {}", "wrong"); Ok(()) }).err().unwrap();
+/// let e = foo(|| track_panic!(Failed, "something {}", "wrong") ).err().unwrap();
 /// assert_eq!(format!("\n{}", e), r#"
 /// Failed (cause; something wrong)
 /// HISTORY:
