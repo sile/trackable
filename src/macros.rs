@@ -220,6 +220,9 @@ macro_rules! track_assert_eq {
                       "assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`)",
                       left, right);
     };
+    ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
+        track_assert_eq!($left, $right, $error_kind, $fmt,);
+    };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         let left = $left;
         let right = $right;
@@ -243,6 +246,9 @@ macro_rules! track_assert_ne {
         track_assert!(left != right, $error_kind,
                       "assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`)",
                       left, right);
+    };
+    ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
+        track_assert_ne!($left, $right, $error_kind, $fmt,);
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         let left = $left;
