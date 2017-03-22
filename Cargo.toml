@@ -1,6 +1,6 @@
 [package]
 name = "trackable"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 description = "This library provides a way to track objects manually as an alternative to mechanisms like backtracing"
 documentation = "https://docs.rs/trackable"
@@ -8,6 +8,9 @@ homepage = "https://github.com/sile/trackable"
 repository = "https://github.com/sile/trackable"
 readme = "README.md"
 license = "MIT"
+
+[badges]
+travis-ci = {repository = "sile/trackable"}
 
 [dependencies]
 rand = "0.3"
