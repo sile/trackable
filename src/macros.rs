@@ -366,3 +366,103 @@ macro_rules! track_try_unwrap {
         }
     };
 }
+
+/// Implements the typical traits for a newtype $error of `TrackableError<$kind>`.
+///
+/// The automatically implemented traits are `Deref`, `From`, `Display`, `Error`,
+/// `Trackable` and `IntoTrackableError`.
+///
+/// This macro is useful to reduce the boilerplate code when
+/// you define a your own trackable error type.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// use trackable::error::{TrackableError, ErrorKind as TrackableErrorKind};
+///
+/// #[derive(Debug, Clone, PartialEq, Eq)]
+/// pub enum ErrorKind {
+///    Foo,
+///    Bar,
+///    Baz,
+/// }
+/// impl TrackableErrorKind for ErrorKind {}
+///
+/// // Defines a newtype of `TrackableError<ErrorKind>`.
+/// //
+/// // NOTE:
+/// // If there is no need to implement your own features for the new error type,
+/// // it is more concise to use aliasing (i.e., `pub type Error = ...`)
+/// // instead of newtype pattern.
+/// #[derive(Debug, Clone)]
+/// pub struct Error(TrackableError<ErrorKind>);
+/// derive_traits_for_trackable_error_newtype!(Error, ErrorKind);
+///
+/// # fn main() {}
+/// ```
+#[macro_export]
+macro_rules! derive_traits_for_trackable_error_newtype {
+    ($error:ty, $kind:ty) => {
+        impl ::std::ops::Deref for $error {
+            type Target = $crate::error::TrackableError<$kind>;
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+        impl From<TrackableError<$kind>> for $error {
+            fn from(f: TrackableError<$kind>) -> Self {
+                Error(f)
+            }
+        }
+        impl From<$error> for TrackableError<$kind> {
+            fn from(f: $error) -> Self {
+                f.0
+            }
+        }
+        impl ::std::fmt::Display for $error {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                self.0.fmt(f)
+            }
+        }
+        impl ::std::error::Error for $error {
+            fn description(&self) -> &str {
+                self.0.description()
+            }
+            fn cause(&self) -> Option<&::std::error::Error> {
+                self.0.cause()
+            }
+        }
+        impl $crate::Trackable for $error {
+            type Event = $crate::error::Event;
+            fn assign_tracking_number(&mut self) {
+                self.0.assign_tracking_number();
+            }
+            fn tracking_number(&self) -> Option<$crate::TrackingNumber> {
+                self.0.tracking_number()
+            }
+            fn enable_tracking(self) -> Self
+                where Self: Sized
+            {
+                From::from(self.0.enable_tracking())
+            }
+            fn disable_tracking(self) -> Self
+                where Self: Sized
+            {
+                From::from(self.0.disable_tracking())
+            }
+            fn history(&self) -> Option<&$crate::History<Self::Event>> {
+                self.0.history()
+            }
+            fn history_mut(&mut self) -> Option<&mut $crate::History<Self::Event>> {
+                self.0.history_mut()
+            }
+        }
+        impl $crate::error::IntoTrackableError<$error> for $kind {
+            fn into_trackable_error(e: $error) -> $crate::error::TrackableError<$kind> {
+                e.0
+            }
+        }
+    }
+}
