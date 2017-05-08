@@ -193,6 +193,31 @@ impl<T: Trackable> Trackable for Option<T> {
         self.as_mut().and_then(|t| t.history_mut())
     }
 }
+impl<T, E: Trackable> Trackable for Result<T, E> {
+    type Event = E::Event;
+    fn assign_tracking_number(&mut self) {
+        self.as_mut().err().map(|t| t.assign_tracking_number());
+    }
+    fn tracking_number(&self) -> Option<TrackingNumber> {
+        self.as_ref().err().and_then(|t| t.tracking_number())
+    }
+    fn enable_tracking(self) -> Self
+        where Self: Sized
+    {
+        self.map_err(|t| t.enable_tracking())
+    }
+    fn disable_tracking(self) -> Self
+        where Self: Sized
+    {
+        self.map_err(|t| t.disable_tracking())
+    }
+    fn history(&self) -> Option<&History<Self::Event>> {
+        self.as_ref().err().and_then(|t| t.history())
+    }
+    fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
+        self.as_mut().err().and_then(|t| t.history_mut())
+    }
+}
 
 /// The tracking history of a target.
 ///

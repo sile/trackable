@@ -450,31 +450,6 @@ impl<K> Trackable for TrackableError<K> {
         self.history.as_mut()
     }
 }
-impl<T, K> Trackable for Result<T, TrackableError<K>> {
-    type Event = Event;
-    fn assign_tracking_number(&mut self) {
-        self.as_mut().err().map(|t| t.assign_tracking_number());
-    }
-    fn tracking_number(&self) -> Option<TrackingNumber> {
-        self.as_ref().err().and_then(|t| t.tracking_number())
-    }
-    fn enable_tracking(self) -> Self
-        where Self: Sized
-    {
-        self.map_err(|t| t.enable_tracking())
-    }
-    fn disable_tracking(self) -> Self
-        where Self: Sized
-    {
-        self.map_err(|t| t.disable_tracking())
-    }
-    fn history(&self) -> Option<&History> {
-        self.as_ref().err().and_then(|t| t.history())
-    }
-    fn history_mut(&mut self) -> Option<&mut History> {
-        self.as_mut().err().and_then(|t| t.history_mut())
-    }
-}
 
 /// This trait allows to construct `TrackableError<Self>` via a conversion from `From`.
 pub trait IntoTrackableError<From>: Sized {
