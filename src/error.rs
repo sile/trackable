@@ -36,7 +36,7 @@
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
 //!   [0] at <anon>:28
-//!   [1] at <anon>:29; I passed here
+//!   [1] at <anon>:29 -- I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
@@ -264,7 +264,7 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
 ///   [0] at <anon>:28
-///   [1] at <anon>:29; I passed here
+///   [1] at <anon>:29 -- I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
@@ -298,14 +298,14 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(format!("\n{}", original), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at <anon>:11; Hello `original`!
+///   [0] at <anon>:11 -- Hello `original`!
 /// "#);
 ///
 ///     assert_eq!(format!("\n{}", forked), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at <anon>:11; Hello `original`!
-///   [1] at <anon>:13; Hello `forked`!
+///   [0] at <anon>:11 -- Hello `original`!
+///   [1] at <anon>:13 -- Hello `forked`!
 /// "#);
 /// }
 /// ```

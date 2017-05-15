@@ -29,8 +29,8 @@
 /// Failed (cause; something wrong)
 /// HISTORY:
 ///   [0] at <anon>:9
-///   [1] at <anon>:13; This is a note about this location
-///   [2] at <anon>:17; Hello World!
+///   [1] at <anon>:13 -- This is a note about this location
+///   [2] at <anon>:17 -- Hello World!
 /// "#);
 /// # }
 /// ```
@@ -164,7 +164,7 @@ macro_rules! track_try {
 /// Failed (cause; something wrong)
 /// HISTORY:
 ///   [0] at <anon>:24
-///   [1] at <anon>:25; Hello World!
+///   [1] at <anon>:25 -- Hello World!
 /// "#);
 /// # }
 /// ```

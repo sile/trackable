@@ -124,8 +124,8 @@ mod macros;
 ///     assert_eq!(format!("\n{}", o.history().unwrap()), r#"
 /// HISTORY:
 ///   [0] at <anon>:44
-///   [1] at <anon>:45; Hello
-///   [2] at <anon>:46; Hello World!
+///   [1] at <anon>:45 -- Hello
+///   [2] at <anon>:46 -- Hello World!
 /// "#);
 /// }
 /// ```
@@ -337,7 +337,7 @@ impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "at {}:{}", self.file(), self.line())?;
         if !self.message().is_empty() {
-            write!(f, "; {}", self.message())?;
+            write!(f, " -- {}", self.message())?;
         }
         Ok(())
     }
