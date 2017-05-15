@@ -102,10 +102,21 @@ macro_rules! track {
 /// ```
 #[macro_export]
 macro_rules! track_try {
-    ($expr:expr $(, $arg:tt)*) => {
+    ($expr:expr) => {
         match $expr {
             Err(e) => {
-                let e = track!($crate::error::TrackableError::from_cause(e) $(, $arg)*);
+                let e = track!($crate::error::TrackableError::from_cause(e));
+                Err(e)?
+            }
+            Ok(v) => {
+                v
+            }
+        }
+    };
+    ($expr:expr, $($format_arg:tt)+) => {
+        match $expr {
+            Err(e) => {
+                let e = track!($crate::error::TrackableError::from_cause(e), $($format_arg)+);
                 Err(e)?
             }
             Ok(v) => {
@@ -464,5 +475,25 @@ macro_rules! derive_traits_for_trackable_error_newtype {
                 e.0
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use error::Failure;
+
+    #[test]
+    fn track_try_works() {
+        fn foo(bar: Result<(), Failure>) -> Result<(), Failure> {
+            struct Baz {
+                qux: usize,
+            }
+            let baz = Baz { qux: 0 };
+            track_try!(bar.clone());
+            track_try!(bar.clone(), "hello");
+            track_try!(bar.clone(), "baz.qux={}", baz.qux);
+            Ok(())
+        }
+        assert!(foo(Ok(())).is_ok());
     }
 }
