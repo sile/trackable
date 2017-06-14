@@ -304,16 +304,6 @@ macro_rules! derive_traits_for_trackable_error_newtype {
                 &self.0
             }
         }
-        impl From<TrackableError<$kind>> for $error {
-            fn from(f: TrackableError<$kind>) -> Self {
-                $error(f)
-            }
-        }
-        impl From<$error> for TrackableError<$kind> {
-            fn from(f: $error) -> Self {
-                f.0
-            }
-        }
         impl ::std::fmt::Display for $error {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 self.0.fmt(f)
@@ -350,6 +340,22 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             }
             fn history_mut(&mut self) -> Option<&mut $crate::History<Self::Event>> {
                 self.0.history_mut()
+            }
+        }
+        impl From<$crate::error::TrackableError<$kind>> for $error {
+            fn from(f: $crate::error::TrackableError<$kind>) -> Self {
+                $error(f)
+            }
+        }
+        impl From<$error> for $crate::error::TrackableError<$kind> {
+            fn from(f: $error) -> Self {
+                f.0
+            }
+        }
+        impl From<$kind> for $error {
+            fn from(f: $kind) -> Self {
+                use $crate::error::ErrorKindExt;
+                f.error().into()
             }
         }
     }
