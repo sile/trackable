@@ -80,6 +80,14 @@ impl ErrorKind for Failed {
 #[derive(Debug, Clone)]
 pub struct Failure(TrackableError<Failed>);
 derive_traits_for_trackable_error_newtype!(Failure, Failed);
+impl Failure {
+    /// Makes a new `Failure` instance which was caused by the `error`.
+    pub fn from_error<E>(self, error: E) -> Self
+        where E: Into<BoxError>
+    {
+        Failed.cause(error).into()
+    }
+}
 
 /// This trait represents a error kind which `TrackableError` can have.
 pub trait ErrorKind: fmt::Debug {
