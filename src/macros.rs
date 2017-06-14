@@ -62,119 +62,6 @@ macro_rules! track {
     };
 }
 
-/// Error trackable variant of the standard `try!` macro.
-///
-/// Conceptually, `track_try!(expr)` is equivalent to the following code:
-///
-/// ```no_run
-/// # #[macro_use]
-/// # extern crate trackable;
-/// # use trackable::error::{TrackableError as Error, ErrorKind as Kind};
-/// #
-/// # fn main() {}
-/// # fn foo<T, E: Kind>(expr: Result<T, Error<E>>) -> Result<T, Error<E>> {
-/// # let v =
-/// expr.map_err(|e| {
-///     // Converts to a trackable error.
-///     let e = trackable::error::TrackableError::from_cause(e);
-///
-///     // Saves this location in the history of `e`.
-///     track!(e)
-/// })?;
-/// # Ok(v)
-/// # }
-/// ```
-///
-/// Like `trace!` macro, it is also possible to leave a message in this location:
-///
-/// ```no_run
-/// # #[macro_use]
-/// # extern crate trackable;
-/// # use trackable::error::{TrackableError as Error, ErrorKind as Kind};
-/// #
-/// # fn try_something<E: Kind>(arg: usize) -> Result<(), Error<E>> { panic!() }
-/// # fn main() {}
-/// # fn foo<E: Kind>() -> Result<(), Error<E>> {
-/// let arg = 0;
-/// track_try!(try_something(arg), "Failed; The value of `arg` was {:?}", arg);
-/// # Ok(())
-/// # }
-/// ```
-#[macro_export]
-macro_rules! track_try {
-    ($expr:expr) => {
-        match $expr {
-            Err(e) => {
-                let e = track!($crate::error::TrackableError::from_cause(e));
-                Err(e)?
-            }
-            Ok(v) => {
-                v
-            }
-        }
-    };
-    ($expr:expr, $($format_arg:tt)+) => {
-        match $expr {
-            Err(e) => {
-                let e = track!($crate::error::TrackableError::from_cause(e), $($format_arg)+);
-                Err(e)?
-            }
-            Ok(v) => {
-                v
-            }
-        }
-    };
-}
-
-/// Error tracking macro for the types which have `map_err` method.
-///
-/// Unlink `track_try!` macro,
-/// This does not require that the `expr` is evaluated to a `std::result::Result` value.
-/// And it will not return from the current function, even if the value of `expr` is erroneous.
-///
-/// ```
-/// # #![allow(dead_code)]
-/// # #[macro_use]
-/// # extern crate trackable;
-/// # fn main() {
-/// use trackable::error::Failure;
-///
-/// enum MyResult<E> {
-///     Ok(usize),
-///     Err(E),
-/// }
-/// impl<E> MyResult<E> {
-///     fn map_err<F, T>(self, f: F) -> MyResult<T> where F: FnOnce(E) -> T {
-///         match self {
-///             MyResult::Err(e) => MyResult::Err(f(e)),
-///             MyResult::Ok(v) => MyResult::Ok(v),
-///         }
-///     }
-///     fn err(self) -> Option<E> {
-///         if let MyResult::Err(e) = self { Some(e) } else { None }
-///     }
-/// }
-///
-/// let result = MyResult::Err("something wrong");
-/// let result: MyResult<Failure> = track_err!(result);
-/// let result: MyResult<Failure> = track_err!(result, "Hello World!");
-///
-/// let e = result.err().unwrap();
-/// assert_eq!(format!("\n{}", e), r#"
-/// Failed (cause; something wrong)
-/// HISTORY:
-///   [0] at <anon>:24
-///   [1] at <anon>:25 -- Hello World!
-/// "#);
-/// # }
-/// ```
-#[macro_export]
-macro_rules! track_err {
-    ($expr:expr $(, $arg:tt)*) => {
-        $expr.map_err(|e| track!($crate::error::TrackableError::from_cause(e) $(, $arg)*))
-    };
-}
-
 /// Error trackable variant of the standard `assert!` macro.
 ///
 /// This is a simple wrapper of the `track_panic!` macro.
@@ -489,9 +376,9 @@ mod test {
                 qux: usize,
             }
             let baz = Baz { qux: 0 };
-            track_try!(bar.clone());
-            track_try!(bar.clone(), "hello");
-            track_try!(bar.clone(), "baz.qux={}", baz.qux);
+            track!(bar.clone())?;
+            track!(bar.clone(), "hello")?;
+            track!(bar.clone(), "baz.qux={}", baz.qux)?;
             Ok(())
         }
         assert!(foo(Ok(())).is_ok());

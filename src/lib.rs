@@ -10,16 +10,16 @@
 //! use trackable::error::{Failed, Failure, ErrorKindExt};
 //!
 //! fn foo() -> Result<(), Failure> {
-//!     track_try!(std::fs::File::open("/path/to/non_existent_file")
-//!                .map_err(|e| Failed.cause(e)));
+//!     track!(std::fs::File::open("/path/to/non_existent_file")
+//!            .map_err(|e| Failed.cause(e)))?;
 //!     Ok(())
 //! }
 //! fn bar() -> Result<(), Failure> {
-//!     track_try!(foo());
+//!     track!(foo())?;
 //!     Ok(())
 //! }
 //! fn baz() -> Result<(), Failure> {
-//!     track_try!(bar());
+//!     track!(bar())?;
 //!     Ok(())
 //! }
 //!
@@ -57,7 +57,7 @@ mod macros;
 ///   - It manages own backtrace-like (but more general)
 ///     [history](struct.History.html) for tracking.
 ///   - You can add entries to the history by calling tracking macros
-///     (e.g., [track!](macro.track.html), [track_try!](macro.track_try.html)).
+///     (e.g., [track!](macro.track.html))
 /// 2. **Tracking mode**:
 ///   - You can enable (resp. disable) tracking by calling
 ///     `enable_tracking` (resp. `disable_tracking`) method of this trait.

@@ -41,7 +41,8 @@
 //!
 //!     // Tries to execute I/O operation
 //!     let result = (|| -> Result<_, MyError> {
-//!         let f = track_try!(std::fs::File::open("/path/to/non_existent_file"));
+//!         let f = track!(std::fs::File::open("/path/to/non_existent_file")
+//!                        .map_err(MyError::from_cause))?;
 //!         Ok(f)
 //!     })();
 //!     let error = result.err().unwrap();
@@ -269,7 +270,8 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///
 ///     // Tries to execute I/O operation
 ///     let result = (|| -> Result<_, MyError> {
-///         let f = track_try!(std::fs::File::open("/path/to/non_existent_file"));
+///         let f = track!(std::fs::File::open("/path/to/non_existent_file")
+///                        .map_err(MyError::from_cause))?;
 ///         Ok(f)
 ///     })();
 ///     let error = result.err().unwrap();

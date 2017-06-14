@@ -18,16 +18,16 @@ extern crate trackable;
 use trackable::error::{Failed, Failure, ErrorKindExt};
 
 fn foo() -> Result<(), Failure> {
-    track_try!(std::fs::File::open("/path/to/non_existent_file")
-               .map_err(|e| Failed.cause(e)));
+    track!(std::fs::File::open("/path/to/non_existent_file")
+           .map_err(|e| Failed.cause(e)))?;
     Ok(())
 }
 fn bar() -> Result<(), Failure> {
-    track_try!(foo());
+    track!(foo())?;
     Ok(())
 }
 fn baz() -> Result<(), Failure> {
-    track_try!(bar());
+    track!(bar())?;
     Ok(())
 }
 
