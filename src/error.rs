@@ -5,9 +5,17 @@
 //! ```
 //! #[macro_use]
 //! extern crate trackable;
-//! use trackable::error::{TrackableError, IntoTrackableError, ErrorKind, ErrorKindExt};
+//! use trackable::error::{TrackableError, ErrorKind, ErrorKindExt};
 //!
-//! type MyError = TrackableError<MyErrorKind>;
+//! #[derive(Debug)]
+//! struct MyError(TrackableError<MyErrorKind>);
+//! derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
+//! impl From<std::io::Error> for MyError {
+//!     fn from(f: std::io::Error) -> Self {
+//!         // Any I/O errors are considered critical
+//!         MyErrorKind::Critical.cause(f).into()
+//!     }
+//! }
 //!
 //! # #[allow(dead_code)]
 //! #[derive(Debug, PartialEq, Eq)]
@@ -20,29 +28,23 @@
 //!         *self == MyErrorKind::Critical  // Only critical errors are tracked
 //!     }
 //! }
-//! impl IntoTrackableError<std::io::Error> for MyErrorKind {
-//!     fn into_trackable_error(e: std::io::Error) -> MyError {
-//!         // Any I/O errors are considered critical
-//!         MyErrorKind::Critical.cause(e)
-//!     }
-//! }
 //!
 //! fn main() {
 //!     // Tracks an error
-//!     let error: MyError = MyErrorKind::Critical.cause("something wrong");
+//!     let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
 //!     let error = track!(error);
 //!     let error = track!(error, "I passed here");
 //!     assert_eq!(format!("\nError: {}", error), r#"
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
-//!   [0] at <anon>:28
-//!   [1] at <anon>:29 -- I passed here
+//!   [0] at <anon>:30
+//!   [1] at <anon>:31 -- I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
 //!     let result = (|| -> Result<_, MyError> {
 //!         let f = track!(std::fs::File::open("/path/to/non_existent_file")
-//!                        .map_err(MyError::from_cause))?;
+//!                        .map_err(MyError::from))?;
 //!         Ok(f)
 //!     })();
 //!     let error = result.err().unwrap();
@@ -73,24 +75,11 @@ impl ErrorKind for Failed {
         "Failed"
     }
 }
-impl IntoTrackableError<BoxError> for Failed {
-    fn into_trackable_error(cause: BoxError) -> Failure {
-        Failed.cause(cause)
-    }
-}
-impl IntoTrackableError<String> for Failed {
-    fn into_trackable_error(cause: String) -> Failure {
-        Failed.cause(cause)
-    }
-}
-impl<'a> IntoTrackableError<&'a str> for Failed {
-    fn into_trackable_error(cause: &'a str) -> Failure {
-        Failed.cause(cause)
-    }
-}
 
 /// `TrackableError` type specialized for `Failed`.
-pub type Failure = TrackableError<Failed>;
+#[derive(Debug, Clone)]
+pub struct Failure(TrackableError<Failed>);
+derive_traits_for_trackable_error_newtype!(Failure, Failed);
 
 /// This trait represents a error kind which `TrackableError` can have.
 pub trait ErrorKind: fmt::Debug {
@@ -206,9 +195,11 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// "#);
     /// }
     /// ```
-    fn takes_over<K>(self, from: TrackableError<K>) -> TrackableError<Self>
-        where K: ErrorKind + Send + Sync + 'static
+    fn takes_over<F, K>(self, from: F) -> TrackableError<Self>
+        where F: Into<TrackableError<K>>,
+              K: ErrorKind + Send + Sync + 'static
     {
+        let from = from.into();
         let mut history = from.history;
         if let Some(ref mut h) = history {
             h.add(Event::TakeOver(Arc::new(Box::new(from.kind))));
@@ -234,9 +225,17 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 /// ```
 /// #[macro_use]
 /// extern crate trackable;
-/// use trackable::error::{TrackableError, IntoTrackableError, ErrorKind, ErrorKindExt};
+/// use trackable::error::{TrackableError, ErrorKind, ErrorKindExt};
 ///
-/// type MyError = TrackableError<MyErrorKind>;
+/// #[derive(Debug)]
+/// struct MyError(TrackableError<MyErrorKind>);
+/// derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
+/// impl From<std::io::Error> for MyError {
+///     fn from(f: std::io::Error) -> Self {
+///         // Any I/O errors are considered critical
+///         MyErrorKind::Critical.cause(f).into()
+///     }
+/// }
 ///
 /// # #[allow(dead_code)]
 /// #[derive(Debug, PartialEq, Eq)]
@@ -249,29 +248,23 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///         *self == MyErrorKind::Critical  // Only critical errors are tracked
 ///     }
 /// }
-/// impl IntoTrackableError<std::io::Error> for MyErrorKind {
-///     fn into_trackable_error(e: std::io::Error) -> MyError {
-///         // Any I/O errors are considered critical
-///         MyErrorKind::Critical.cause(e)
-///     }
-/// }
 ///
 /// fn main() {
 ///     // Tracks an error
-///     let error: MyError = MyErrorKind::Critical.cause("something wrong");
+///     let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
 ///     let error = track!(error);
 ///     let error = track!(error, "I passed here");
 ///     assert_eq!(format!("\nError: {}", error), r#"
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
-///   [0] at <anon>:28
-///   [1] at <anon>:29 -- I passed here
+///   [0] at <anon>:30
+///   [1] at <anon>:31 -- I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
 ///     let result = (|| -> Result<_, MyError> {
 ///         let f = track!(std::fs::File::open("/path/to/non_existent_file")
-///                        .map_err(MyError::from_cause))?;
+///                        .map_err(MyError::from))?;
 ///         Ok(f)
 ///     })();
 ///     let error = result.err().unwrap();
@@ -345,13 +338,6 @@ impl<K: ErrorKind> TrackableError<K> {
             history: history,
             tracking_number: tracking_number,
         }
-    }
-
-    /// Makes a new `TrackableError` instance from `cause`.
-    pub fn from_cause<E>(cause: E) -> Self
-        where K: IntoTrackableError<E>
-    {
-        K::into_trackable_error(cause)
     }
 
     /// Returns the kind of this error.
@@ -450,22 +436,6 @@ impl<K> Trackable for TrackableError<K> {
     }
     fn history_mut(&mut self) -> Option<&mut History> {
         self.history.as_mut()
-    }
-}
-
-/// This trait allows to construct `TrackableError<Self>` via a conversion from `From`.
-pub trait IntoTrackableError<From>: Sized {
-    /// Converts from `From` to `TrackableError<Self>`.
-    fn into_trackable_error(f: From) -> TrackableError<Self>;
-}
-impl<T> IntoTrackableError<TrackableError<T>> for T {
-    fn into_trackable_error(e: TrackableError<T>) -> TrackableError<T> {
-        e
-    }
-}
-impl<K: ErrorKind> IntoTrackableError<K> for K {
-    fn into_trackable_error(kind: K) -> TrackableError<K> {
-        kind.into()
     }
 }
 

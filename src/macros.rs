@@ -238,7 +238,7 @@ macro_rules! track_panic {
 /// use trackable::error::{Failed, Failure, ErrorKindExt};
 ///
 /// fn main() {
-///    let result: Result<(), Failure> = Err(Failed.error());
+///    let result: Result<(), Failure> = Err(Failed.error().into());
 ///
 ///    // Following two expressions are conceptually equivalent.
 ///    result.clone().unwrap();
@@ -268,7 +268,7 @@ macro_rules! track_try_unwrap {
 /// Implements the typical traits for a newtype $error of `TrackableError<$kind>`.
 ///
 /// The automatically implemented traits are `Deref`, `From`, `Display`, `Error`,
-/// `Trackable` and `IntoTrackableError`.
+/// `Trackable` and `From`.
 ///
 /// This macro is useful to reduce the boilerplate code when
 /// you define a your own trackable error type.
@@ -289,11 +289,6 @@ macro_rules! track_try_unwrap {
 /// impl TrackableErrorKind for ErrorKind {}
 ///
 /// // Defines a newtype of `TrackableError<ErrorKind>`.
-/// //
-/// // NOTE:
-/// // If there is no need to implement your own features for the new error type,
-/// // it is more concise to use aliasing (i.e., `pub type Error = ...`)
-/// // instead of newtype pattern.
 /// #[derive(Debug, Clone)]
 /// pub struct Error(TrackableError<ErrorKind>);
 /// derive_traits_for_trackable_error_newtype!(Error, ErrorKind);
@@ -302,7 +297,7 @@ macro_rules! track_try_unwrap {
 /// ```
 #[macro_export]
 macro_rules! derive_traits_for_trackable_error_newtype {
-    ($error:ty, $kind:ty) => {
+    ($error:ident, $kind:ty) => {
         impl ::std::ops::Deref for $error {
             type Target = $crate::error::TrackableError<$kind>;
             fn deref(&self) -> &Self::Target {
@@ -311,7 +306,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
         }
         impl From<TrackableError<$kind>> for $error {
             fn from(f: TrackableError<$kind>) -> Self {
-                Error(f)
+                $error(f)
             }
         }
         impl From<$error> for TrackableError<$kind> {
@@ -355,11 +350,6 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             }
             fn history_mut(&mut self) -> Option<&mut $crate::History<Self::Event>> {
                 self.0.history_mut()
-            }
-        }
-        impl $crate::error::IntoTrackableError<$error> for $kind {
-            fn into_trackable_error(e: $error) -> $crate::error::TrackableError<$kind> {
-                e.0
             }
         }
     }

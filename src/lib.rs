@@ -46,8 +46,10 @@ extern crate rand;
 
 use std::fmt;
 
-pub mod error;
+#[macro_use]
 mod macros;
+
+pub mod error;
 
 /// This trait allows to track an instance of an implementation type.
 ///

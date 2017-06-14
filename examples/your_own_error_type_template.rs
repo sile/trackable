@@ -1,26 +1,28 @@
 #[macro_use]
 extern crate trackable;
 
-use trackable::error::{TrackableError, IntoTrackableError, Failure};
+use trackable::error::{TrackableError, Failure};
 use trackable::error::{ErrorKind as TrackableErrorKind, ErrorKindExt};
 
-pub type Error = TrackableError<ErrorKind>;
+#[derive(Debug, Clone)]
+pub struct Error(TrackableError<ErrorKind>);
+derive_traits_for_trackable_error_newtype!(Error, ErrorKind);
+impl From<Failure> for Error {
+    fn from(f: Failure) -> Self {
+        ErrorKind::Other.takes_over(f).into()
+    }
+}
+impl From<std::io::Error> for Error {
+    fn from(f: std::io::Error) -> Self {
+        ErrorKind::Other.cause(f).into()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ErrorKind {
     Other,
 }
 impl TrackableErrorKind for ErrorKind {}
-impl IntoTrackableError<Failure> for ErrorKind {
-    fn into_trackable_error(from: Failure) -> Error {
-        ErrorKind::Other.takes_over(from)
-    }
-}
-impl IntoTrackableError<std::io::Error> for ErrorKind {
-    fn into_trackable_error(from: std::io::Error) -> Error {
-        ErrorKind::Other.cause(from)
-    }
-}
 
 fn main() {
     let e = ErrorKind::Other.cause("something wrong");
