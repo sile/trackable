@@ -2,6 +2,7 @@ trackable
 =========
 
 [![Crates.io: trackable](http://meritbadge.herokuapp.com/trackable)](https://crates.io/crates/trackable)
+[![Documentation](https://docs.rs/libflate/badge.svg)](https://docs.rs/trackable)
 [![Build Status](https://travis-ci.org/sile/trackable.svg?branch=master)](https://travis-ci.org/sile/trackable)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -47,15 +48,4 @@ HISTORY:
 ```
 
 This example used the built-in `Failure` type, but you can easily define your own trackable error types.
-See the documentaion of [error](https://docs.rs/trackable/0.1/trackable/error/index.html) module for more details.
-
-
-Installation
-------------
-
-Add following lines to your `Cargo.toml`:
-
-```toml
-[dependencies]
-trackable = "0.1"
-```
+See the documentaion of [error](https://docs.rs/trackable/0.2/trackable/error/index.html) module for more details.
