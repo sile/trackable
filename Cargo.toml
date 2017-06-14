@@ -3,7 +3,6 @@ name = "trackable"
 version = "0.2.0"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 description = "This library provides a way to track objects manually as an alternative to mechanisms like backtracing"
-documentation = "https://docs.rs/trackable"
 homepage = "https://github.com/sile/trackable"
 repository = "https://github.com/sile/trackable"
 readme = "README.md"
