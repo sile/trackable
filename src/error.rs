@@ -83,7 +83,8 @@ derive_traits_for_trackable_error_newtype!(Failure, Failed);
 impl Failure {
     /// Makes a new `Failure` instance which was caused by the `error`.
     pub fn from_error<E>(self, error: E) -> Self
-        where E: Into<BoxError>
+    where
+        E: Into<BoxError>,
     {
         Failed.cause(error).into()
     }
@@ -159,7 +160,8 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// assert_eq!(e.cause().unwrap().to_string(), "something wrong");
     /// ```
     fn cause<E>(self, cause: E) -> TrackableError<Self>
-        where E: Into<BoxError>
+    where
+        E: Into<BoxError>,
     {
         TrackableError::new(self, cause.into())
     }
@@ -204,8 +206,9 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// }
     /// ```
     fn takes_over<F, K>(self, from: F) -> TrackableError<Self>
-        where F: Into<TrackableError<K>>,
-              K: ErrorKind + Send + Sync + 'static
+    where
+        F: Into<TrackableError<K>>,
+        K: ErrorKind + Send + Sync + 'static,
     {
         let from = from.into();
         let mut history = from.history;
@@ -322,7 +325,8 @@ pub struct TrackableError<K> {
 impl<K: ErrorKind> TrackableError<K> {
     /// Makes a new `TrackableError` instance.
     pub fn new<E>(kind: K, cause: E) -> Self
-        where E: Into<BoxError>
+    where
+        E: Into<BoxError>,
     {
         let history = Self::init_history(&kind);
         let tracking_number = Self::init_tracking_number(&kind);
@@ -358,7 +362,8 @@ impl<K: ErrorKind> TrackableError<K> {
     /// If neither this error has a cause nor it is an `T` value,
     /// this method will return `None`.
     pub fn concrete_cause<T>(&self) -> Option<&T>
-        where T: Error + 'static
+    where
+        T: Error + 'static,
     {
         self.cause.as_ref().and_then(|c| c.downcast_ref())
     }
@@ -426,7 +431,8 @@ impl<K> Trackable for TrackableError<K> {
         self.tracking_number
     }
     fn enable_tracking(mut self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         if self.history.is_none() {
             self.history = Some(History::new());
@@ -434,7 +440,8 @@ impl<K> Trackable for TrackableError<K> {
         self
     }
     fn disable_tracking(mut self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.history = None;
         self

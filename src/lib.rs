@@ -139,7 +139,8 @@ pub trait Trackable {
     ///
     /// Typically, this is called via [track!](macro.track.html) macro.
     fn track<F>(&mut self, f: F)
-        where F: FnOnce() -> Self::Event
+    where
+        F: FnOnce() -> Self::Event,
     {
         self.history_mut().map(|h| h.add(f()));
     }
@@ -158,10 +159,14 @@ pub trait Trackable {
     }
 
     /// Enables tracking of this instance.
-    fn enable_tracking(self) -> Self where Self: Sized;
+    fn enable_tracking(self) -> Self
+    where
+        Self: Sized;
 
     /// Disables tracking of this intance.
-    fn disable_tracking(self) -> Self where Self: Sized;
+    fn disable_tracking(self) -> Self
+    where
+        Self: Sized;
 
     /// Returns the reference of the tracking history of this instance.
     fn history(&self) -> Option<&History<Self::Event>>;
@@ -179,12 +184,14 @@ impl<T: Trackable> Trackable for Option<T> {
         self.as_ref().and_then(|t| t.tracking_number())
     }
     fn enable_tracking(self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.map(|t| t.enable_tracking())
     }
     fn disable_tracking(self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.map(|t| t.disable_tracking())
     }
@@ -204,12 +211,14 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
         self.as_ref().err().and_then(|t| t.tracking_number())
     }
     fn enable_tracking(self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.map_err(|t| t.enable_tracking())
     }
     fn disable_tracking(self) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.map_err(|t| t.disable_tracking())
     }
