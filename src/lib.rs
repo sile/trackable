@@ -7,11 +7,10 @@
 //! #[macro_use]
 //! extern crate trackable;
 //!
-//! use trackable::error::{Failed, Failure, ErrorKindExt};
+//! use trackable::error::Failure;
 //!
 //! fn foo() -> Result<(), Failure> {
-//!     track!(std::fs::File::open("/path/to/non_existent_file")
-//!            .map_err(|e| Failed.cause(e)))?;
+//!     track!(std::fs::File::open("/path/to/non_existent_file").map_err(Failure::from_error))?;
 //!     Ok(())
 //! }
 //! fn bar() -> Result<(), Failure> {
