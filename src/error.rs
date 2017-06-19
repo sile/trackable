@@ -82,7 +82,7 @@ pub struct Failure(TrackableError<Failed>);
 derive_traits_for_trackable_error_newtype!(Failure, Failed);
 impl Failure {
     /// Makes a new `Failure` instance which was caused by the `error`.
-    pub fn from_error<E>(self, error: E) -> Self
+    pub fn from_error<E>(error: E) -> Self
     where
         E: Into<BoxError>,
     {
