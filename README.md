@@ -2,7 +2,7 @@ trackable
 =========
 
 [![Crates.io: trackable](http://meritbadge.herokuapp.com/trackable)](https://crates.io/crates/trackable)
-[![Documentation](https://docs.rs/libflate/badge.svg)](https://docs.rs/trackable)
+[![Documentation](https://docs.rs/trackable/badge.svg)](https://docs.rs/trackable)
 [![Build Status](https://travis-ci.org/sile/trackable.svg?branch=master)](https://travis-ci.org/sile/trackable)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
