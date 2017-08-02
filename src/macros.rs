@@ -87,7 +87,7 @@ macro_rules! track {
 /// let r = add_positive_f32(1.0, -2.0); // Err
 /// assert!(r.is_err());
 /// assert_eq!(format!("\n{}", r.err().unwrap()), r#"
-/// Failed (cause; assertion failed: a > 0.0 && b > 0.0)
+/// Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 /// HISTORY:
 ///   [0] at <anon>:8
 /// "#);
@@ -96,11 +96,18 @@ macro_rules! track {
 #[macro_export]
 macro_rules! track_assert {
     ($cond:expr, $error_kind:expr) => {
-        track_assert!($cond, $error_kind, "assertion failed: {}", stringify!($cond));
-    };
-    ($cond:expr, $error_kind:expr, $($format_arg:tt)+) => {
         if ! $cond {
-            track_panic!($error_kind, $($format_arg)+);
+            track_panic!($error_kind, "assertion failed: `{}`", stringify!($cond))
+        }
+    };
+    ($cond:expr, $error_kind:expr, $fmt:expr) => {
+        track_assert!($cond, $error_kind, $fmt,);
+    };
+    ($cond:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
+        if ! $cond {
+            track_panic!($error_kind,
+                         concat!("assertion failed: `{}`; ", $fmt),
+                         stringify!($cond), $($arg)*);
         }
     };
 }
