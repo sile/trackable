@@ -136,7 +136,6 @@ macro_rules! track_assert_eq {
     };
 }
 
-
 /// Error trackable variant of the standard `assert_ne!` macro.
 ///
 /// Conceptually, `track_assert_ne!(left, right, error_kind)` is equivalent to
@@ -164,6 +163,60 @@ macro_rules! track_assert_ne {
                 concat!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`): ",
                         $fmt),
                 left, right, $($arg)*);
+        }
+    };
+}
+
+/// Trackable assertion for `Option` values.
+///
+/// This is a simple wrapper of the `track_panic!` macro.
+/// It will call `track_panic!` if `$expr` is evaluated to `None`.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # fn main() {
+/// use trackable::error::{Failed, Failure};
+///
+/// fn trackable_checked_sub(a: u32, b: u32) -> Result<u32, Failure> {
+///     let n = track_assert_some!(a.checked_sub(b), Failed);
+///     Ok(n)
+/// }
+///
+/// let r = trackable_checked_sub(10, 2); // Ok
+/// assert_eq!(r.ok(), Some(8));
+///
+/// let r = trackable_checked_sub(2, 10); // Err
+/// assert!(r.is_err());
+/// assert_eq!(format!("\n{}", r.err().unwrap()), r#"
+/// Failed (cause; assertion failed: `a.checked_sub(b).is_some()`)
+/// HISTORY:
+///   [0] at <anon>:8
+/// "#);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! track_assert_some {
+    ($expr:expr, $error_kind:expr) => {
+        if let Some(v) = $expr {
+            v
+        } else {
+            track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr));
+        }
+    };
+    ($expr:expr, $error_kind:expr, $fmt:expr) => {
+        track_assert_some!($expr, $error_kind, $fmt,);
+    };
+    ($expr:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
+        if let Some(v) = $expr {
+            v
+        } else {
+            track_panic!($error_kind,
+                         concat!("assertion failed: `{}.is_some()`; ", $fmt),
+                         stringify!($expr), $($arg)*);
         }
     };
 }
