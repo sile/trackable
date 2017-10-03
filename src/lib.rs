@@ -68,7 +68,7 @@ pub mod error;
 ///   - It is possible to assign a randomly generated [tracking number](struct.TrackingNumber.html)
 ///     to a `Trackable` instance by calling `assign_tracking_number` method.
 ///
-/// See [TrackableError](error/struct.TrackableError.html) as a typical implementaion of this trait.
+/// See [`TrackableError`](error/struct.TrackableError.html) as a typical implementaion of this trait.
 ///
 /// # Examples
 ///
@@ -283,6 +283,11 @@ impl<Event: fmt::Display> fmt::Display for History<Event> {
         Ok(())
     }
 }
+impl<Event> Default for History<Event> {
+    fn default() -> Self {
+        History::new()
+    }
+}
 
 /// The location of interest in source code files.
 ///
@@ -316,7 +321,7 @@ impl Location {
 
     /// Gets the crate name of this location.
     pub fn crate_name(&self) -> &'static str {
-        if let Some(end) = self.module_path.find(":") {
+        if let Some(end) = self.module_path.find(':') {
             &self.module_path[..end]
         } else {
             self.module_path

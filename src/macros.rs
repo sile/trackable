@@ -120,8 +120,8 @@ macro_rules! track_assert {
 macro_rules! track_assert_eq {
     ($left:expr, $right:expr, $error_kind:expr) => {
         {
-            let ref left = $left;
-            let ref right = $right;
+            let left = &$left;
+            let right = &$right;
             track_assert!(left == right, $error_kind,
                           "assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`)",
                           left, right);
@@ -132,8 +132,8 @@ macro_rules! track_assert_eq {
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
-            let ref left = $left;
-            let ref right = $right;
+            let left = &$left;
+            let right = &$right;
             track_assert!(
                 left == right, $error_kind,
                 concat!("assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`): ",
@@ -151,8 +151,8 @@ macro_rules! track_assert_eq {
 macro_rules! track_assert_ne {
     ($left:expr, $right:expr, $error_kind:expr) => {
         {
-            let ref left = $left;
-            let ref right = $right;
+            let left = &$left;
+            let right = &$right;
             track_assert!(left != right, $error_kind,
                           "assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`)",
                           left, right);
@@ -163,8 +163,8 @@ macro_rules! track_assert_ne {
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
-            let ref left = $left;
-            let ref right = $right;
+            let left = &$left;
+            let right = &$right;
             track_assert!(
                 left != right, $error_kind,
                 concat!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`): ",
