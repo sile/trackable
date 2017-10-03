@@ -25,12 +25,12 @@
 /// let e = Some(e);
 /// let e = track!(e, "Hello {}", "World!");
 ///
-/// assert_eq!(format!("\n{}", e.unwrap().err().unwrap()), r#"
+/// assert_eq!(format!("\n{}", e.unwrap().err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; something wrong)
 /// HISTORY:
-///   [0] at <anon>:9
-///   [1] at <anon>:13 -- This is a note about this location
-///   [2] at <anon>:17 -- Hello World!
+///   [0] at src/macros.rs:9
+///   [1] at src/macros.rs:13 -- This is a note about this location
+///   [2] at src/macros.rs:17 -- Hello World!
 /// "#);
 /// # }
 /// ```
@@ -86,10 +86,10 @@ macro_rules! track {
 ///
 /// let r = add_positive_f32(1.0, -2.0); // Err
 /// assert!(r.is_err());
-/// assert_eq!(format!("\n{}", r.err().unwrap()), r#"
+/// assert_eq!(format!("\n{}", r.err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 /// HISTORY:
-///   [0] at <anon>:8
+///   [0] at src/macros.rs:8
 /// "#);
 /// # }
 /// ```
@@ -198,10 +198,10 @@ macro_rules! track_assert_ne {
 ///
 /// let r = trackable_checked_sub(2, 10); // Err
 /// assert!(r.is_err());
-/// assert_eq!(format!("\n{}", r.err().unwrap()), r#"
+/// assert_eq!(format!("\n{}", r.err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; assertion failed: `a.checked_sub(b).is_some()`)
 /// HISTORY:
-///   [0] at <anon>:8
+///   [0] at src/macros.rs:8
 /// "#);
 /// # }
 /// ```
@@ -265,17 +265,17 @@ macro_rules! track_assert_some {
 /// fn foo<F>(f: F) -> Result<(), Failure> where F: FnOnce() -> Result<(), Failure> { f() }
 ///
 /// let e = foo(|| track_panic!(Failed) ).err().unwrap();
-/// assert_eq!(format!("\n{}", e), r#"
+/// assert_eq!(format!("\n{}", e).replace('\\', "/"), r#"
 /// Failed
 /// HISTORY:
-///   [0] at <anon>:9
+///   [0] at src/macros.rs:9
 /// "#);
 ///
 /// let e = foo(|| track_panic!(Failed, "something {}", "wrong") ).err().unwrap();
-/// assert_eq!(format!("\n{}", e), r#"
+/// assert_eq!(format!("\n{}", e).replace('\\', "/"), r#"
 /// Failed (cause; something wrong)
 /// HISTORY:
-///   [0] at <anon>:16
+///   [0] at src/macros.rs:16
 /// "#);
 /// # }
 /// ```
@@ -433,10 +433,10 @@ macro_rules! derive_traits_for_trackable_error_newtype {
 
 #[cfg(test)]
 mod test {
-    use error::Failure;
+    use error::{Failure, Failed};
 
     #[test]
-    fn track_try_works() {
+    fn track_works() {
         fn foo(bar: Result<(), Failure>) -> Result<(), Failure> {
             struct Baz {
                 qux: usize,
@@ -448,5 +448,27 @@ mod test {
             Ok(())
         }
         assert!(foo(Ok(())).is_ok());
+    }
+
+    #[test]
+    fn track_assert_works() {
+        fn add_positive_f32(a: f32, b: f32) -> Result<f32, Failure> {
+            track_assert!(a > 0.0 && b > 0.0, Failed);
+            Ok(a + b)
+        }
+
+        let r = add_positive_f32(3.0, 2.0); // Ok
+        assert_eq!(r.ok(), Some(5.0));
+
+        let r = add_positive_f32(1.0, -2.0); // Err
+        assert!(r.is_err());
+        assert_eq!(
+            format!("\n{}", r.err().unwrap()).replace('\\', "/"),
+            r#"
+Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
+HISTORY:
+  [0] at src/macros.rs:456
+"#
+        );
     }
 }

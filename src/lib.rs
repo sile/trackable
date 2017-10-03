@@ -27,12 +27,12 @@
 //!     assert!(result.is_err());
 //!
 //!     let error = result.err().unwrap();
-//!     assert_eq!(format!("\r{}", error), r#"
+//!     assert_eq!(format!("\r{}", error).replace('\\', "/"), r#"
 //! Failed (cause; No such file or directory)
 //! HISTORY:
-//!   [0] at <anon>:7
-//!   [1] at <anon>:12
-//!   [2] at <anon>:16
+//!   [0] at src/lib.rs:7
+//!   [1] at src/lib.rs:12
+//!   [2] at src/lib.rs:16
 //! "#);
 //! }
 //! ```
@@ -122,11 +122,11 @@ pub mod error;
 ///     let o = track!(o, "Hello");
 ///     let o = track!(o, "Hello {}", "World!");
 ///
-///     assert_eq!(format!("\n{}", o.history().unwrap()), r#"
+///     assert_eq!(format!("\n{}", o.history().unwrap()).replace('\\', "/"), r#"
 /// HISTORY:
-///   [0] at <anon>:44
-///   [1] at <anon>:45 -- Hello
-///   [2] at <anon>:46 -- Hello World!
+///   [0] at src/lib.rs:44
+///   [1] at src/lib.rs:45 -- Hello
+///   [2] at src/lib.rs:46 -- Hello World!
 /// "#);
 /// }
 /// ```
@@ -389,5 +389,46 @@ impl TrackingNumber {
 impl fmt::Display for TrackingNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:08x}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use error::Failure;
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        fn foo() -> Result<(), Failure> {
+            track!(std::fs::File::open("/path/to/non_existent_file").map_err(
+                |e| {
+                    Failure::from_error(format!("{:?}", e.kind()))
+                },
+            ))?;
+            Ok(())
+        }
+        fn bar() -> Result<(), Failure> {
+            track!(foo())?;
+            Ok(())
+        }
+        fn baz() -> Result<(), Failure> {
+            track!(bar())?;
+            Ok(())
+        }
+
+        let result = baz();
+        assert!(result.is_err());
+
+        let error = result.err().unwrap();
+        assert_eq!(
+            format!("\n{}", error).replace('\\', "/"),
+            r#"
+Failed (cause; NotFound)
+HISTORY:
+  [0] at src/lib.rs:403
+  [1] at src/lib.rs:411
+  [2] at src/lib.rs:415
+"#
+        );
     }
 }

@@ -34,11 +34,11 @@
 //!     let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
 //!     let error = track!(error);
 //!     let error = track!(error, "I passed here");
-//!     assert_eq!(format!("\nError: {}", error), r#"
+//!     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
-//!   [0] at <anon>:30
-//!   [1] at <anon>:31 -- I passed here
+//!   [0] at src/error.rs:30
+//!   [1] at src/error.rs:31 -- I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
@@ -196,12 +196,12 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     ///   let e = Kind1.takes_over(e);
     ///   let e = track!(e);
     ///
-    ///   assert_eq!(format!("\nERROR: {}", e), r#"
+    ///   assert_eq!(format!("\nERROR: {}", e).replace('\\', "/"), r#"
     /// ERROR: Kind1
     /// HISTORY:
-    ///   [0] at <anon>:16
+    ///   [0] at src/error.rs:16
     ///   [1] takes over from `Kind0`
-    ///   [2] at <anon>:19
+    ///   [2] at src/error.rs:19
     /// "#);
     /// }
     /// ```
@@ -265,11 +265,11 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
 ///     let error = track!(error);
 ///     let error = track!(error, "I passed here");
-///     assert_eq!(format!("\nError: {}", error), r#"
+///     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
-///   [0] at <anon>:30
-///   [1] at <anon>:31 -- I passed here
+///   [0] at src/error.rs:30
+///   [1] at src/error.rs:31 -- I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
@@ -301,17 +301,17 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     let forked = original.clone();
 ///     let forked = track!(forked, "Hello `forked`!");
 ///
-///     assert_eq!(format!("\n{}", original), r#"
+///     assert_eq!(format!("\n{}", original).replace('\\', "/"), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at <anon>:11 -- Hello `original`!
+///   [0] at src/error.rs:11 -- Hello `original`!
 /// "#);
 ///
-///     assert_eq!(format!("\n{}", forked), r#"
+///     assert_eq!(format!("\n{}", forked).replace('\\', "/"), r#"
 /// Failed #4d6fdaeeb2cc39a2
 /// HISTORY:
-///   [0] at <anon>:11 -- Hello `original`!
-///   [1] at <anon>:13 -- Hello `forked`!
+///   [0] at src/error.rs:11 -- Hello `original`!
+///   [1] at src/error.rs:13 -- Hello `forked`!
 /// "#);
 /// }
 /// ```
@@ -475,5 +475,60 @@ impl fmt::Display for Event {
 impl From<Location> for Event {
     fn from(f: Location) -> Self {
         Event::Track(f)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std;
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        #[derive(Debug)]
+        struct MyError(TrackableError<MyErrorKind>);
+        derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
+        impl From<std::io::Error> for MyError {
+            fn from(f: std::io::Error) -> Self {
+                // Any I/O errors are considered critical
+                MyErrorKind::Critical.cause(f).into()
+            }
+        }
+
+        #[derive(Debug, PartialEq, Eq)]
+        enum MyErrorKind {
+            Critical,
+            NonCritical,
+        }
+        impl ErrorKind for MyErrorKind {
+            fn is_tracking_needed(&self) -> bool {
+                *self == MyErrorKind::Critical // Only critical errors are tracked
+            }
+        }
+
+        // Tracks an error
+        let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
+        let error = track!(error);
+        let error = track!(error, "I passed here");
+        assert_eq!(
+            format!("\nError: {}", error).replace('\\', "/"),
+            r#"
+Error: Critical (cause; something wrong)
+HISTORY:
+  [0] at src/error.rs:511
+  [1] at src/error.rs:512 -- I passed here
+"#
+        );
+
+        // Tries to execute I/O operation
+        let result = (|| -> Result<_, MyError> {
+            let f = track!(std::fs::File::open("/path/to/non_existent_file").map_err(
+                MyError::from,
+            ))?;
+            Ok(f)
+        })();
+        let error = result.err().unwrap();
+        let cause = error.concrete_cause::<std::io::Error>().unwrap();
+        assert_eq!(cause.kind(), std::io::ErrorKind::NotFound);
     }
 }
