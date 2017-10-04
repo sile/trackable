@@ -433,7 +433,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
 
 #[cfg(test)]
 mod test {
-    use error::{Failure, Failed};
+    use error::{Failure, Failed, ErrorKindExt};
 
     #[test]
     fn track_works() {
@@ -470,5 +470,11 @@ HISTORY:
   [0] at src/macros.rs:456
 "#
         );
+    }
+
+    #[test]
+    #[should_panic]
+    fn track_try_unwrap_works() {
+        track_try_unwrap!(Err(Failed.error()));
     }
 }
