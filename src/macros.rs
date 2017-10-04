@@ -323,13 +323,13 @@ macro_rules! track_panic {
 macro_rules! track_try_unwrap {
     ($expr:expr) => {
         match track!($expr) {
-            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e); }
+            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e) }
             Ok(v) => { v }
         }
     };
     ($expr:expr, $($format_arg:tt)*) => {
         match track!($expr, $($format_arg)*) {
-            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e); }
+            Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e) }
             Ok(v) => { v }
         }
     };
