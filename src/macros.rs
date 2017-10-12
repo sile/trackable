@@ -101,13 +101,13 @@ macro_rules! track_assert {
         }
     };
     ($cond:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert!($cond, $error_kind, $fmt,);
+        track_assert!($cond, $error_kind, $fmt,)
     };
     ($cond:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if ! $cond {
             track_panic!($error_kind,
                          concat!("assertion failed: `{}`; ", $fmt),
-                         stringify!($cond), $($arg)*);
+                         stringify!($cond), $($arg)*)
         }
     };
 }
@@ -124,11 +124,11 @@ macro_rules! track_assert_eq {
             let right = &$right;
             track_assert!(left == right, $error_kind,
                           "assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`)",
-                          left, right);
+                          left, right)
         }
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_eq!($left, $right, $error_kind, $fmt,);
+        track_assert_eq!($left, $right, $error_kind, $fmt,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -138,7 +138,7 @@ macro_rules! track_assert_eq {
                 left == right, $error_kind,
                 concat!("assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`): ",
                         $fmt),
-                left, right, $($arg)*);
+                left, right, $($arg)*)
         }
     };
 }
@@ -155,11 +155,11 @@ macro_rules! track_assert_ne {
             let right = &$right;
             track_assert!(left != right, $error_kind,
                           "assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`)",
-                          left, right);
+                          left, right)
         }
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_ne!($left, $right, $error_kind, $fmt,);
+        track_assert_ne!($left, $right, $error_kind, $fmt,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -169,7 +169,7 @@ macro_rules! track_assert_ne {
                 left != right, $error_kind,
                 concat!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`): ",
                         $fmt),
-                left, right, $($arg)*);
+                left, right, $($arg)*)
         }
     };
 }
@@ -211,11 +211,11 @@ macro_rules! track_assert_some {
         if let Some(v) = $expr {
             v
         } else {
-            track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr));
+            track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr))
         }
     };
     ($expr:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_some!($expr, $error_kind, $fmt,);
+        track_assert_some!($expr, $error_kind, $fmt,)
     };
     ($expr:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if let Some(v) = $expr {
@@ -223,7 +223,7 @@ macro_rules! track_assert_some {
         } else {
             track_panic!($error_kind,
                          concat!("assertion failed: `{}.is_some()`; ", $fmt),
-                         stringify!($expr), $($arg)*);
+                         stringify!($expr), $($arg)*)
         }
     };
 }
@@ -292,7 +292,7 @@ macro_rules! track_panic {
         {
             use $crate::error::ErrorKindExt;
             let message = format!($($format_arg)+);
-            track_panic!($error_kind.cause(message));
+            track_panic!($error_kind.cause(message))
         }
     };
 }
