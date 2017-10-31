@@ -48,16 +48,20 @@ macro_rules! track {
             target
         }
     };
-    ($target:expr, $($format_arg:tt)+) => {
+    ($target:expr, $message:expr) => {
         {
             use $crate::Trackable;
             let mut target = $target;
             target.track(|| {
-                let message = format!($($format_arg)+);
-                let location = $crate::Location::new(module_path!(), file!(), line!(), message);
+                let location = $crate::Location::new(module_path!(), file!(), line!(), $message);
                 From::from(location)
             });
             target
+        }
+    };
+    ($target:expr, $($format_arg:tt)+) => {
+        {
+            track!($target, format!($($format_arg)+))
         }
     };
 }
@@ -288,11 +292,15 @@ macro_rules! track_panic {
             return Err(From::from(e));
         }
     };
-    ($error_kind:expr, $($format_arg:tt)+) => {
+    ($error_kind:expr, $message:expr) => {
         {
             use $crate::error::ErrorKindExt;
-            let message = format!($($format_arg)+);
-            track_panic!($error_kind.cause(message))
+            track_panic!($error_kind.cause($message))
+        }
+    };
+    ($error_kind:expr, $($format_arg:tt)+) => {
+        {
+            track_panic!($error_kind, format!($($format_arg)+))
         }
     };
 }
@@ -467,7 +475,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:456
+  [0] at src/macros.rs:464
 "#
         );
     }

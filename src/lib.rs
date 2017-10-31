@@ -43,6 +43,7 @@
 #![warn(missing_docs)]
 extern crate rand;
 
+use std::borrow::Cow;
 use std::fmt;
 
 #[macro_use]
@@ -68,7 +69,8 @@ pub mod error;
 ///   - It is possible to assign a randomly generated [tracking number](struct.TrackingNumber.html)
 ///     to a `Trackable` instance by calling `assign_tracking_number` method.
 ///
-/// See [`TrackableError`](error/struct.TrackableError.html) as a typical implementaion of this trait.
+/// See [`TrackableError`](error/struct.TrackableError.html)
+/// as a typical implementaion of this trait.
 ///
 /// # Examples
 ///
@@ -297,7 +299,7 @@ pub struct Location {
     module_path: &'static str,
     file: &'static str,
     line: u32,
-    message: String,
+    message: Cow<'static, str>,
 }
 impl Location {
     /// Makes a new `Location` instance.
@@ -310,12 +312,15 @@ impl Location {
     /// let location = Location::new(module_path!(), file!(), line!(), "Hello".to_string());
     /// assert_eq!(location.message(), "Hello");
     /// ```
-    pub fn new(module_path: &'static str, file: &'static str, line: u32, message: String) -> Self {
+    pub fn new<T>(module_path: &'static str, file: &'static str, line: u32, message: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
         Location {
             module_path: module_path,
             file: file,
             line: line,
-            message: message,
+            message: message.into(),
         }
     }
 
@@ -345,7 +350,7 @@ impl Location {
 
     /// Gets the message left at this location.
     pub fn message(&self) -> &str {
-        &self.message
+        self.message.as_ref()
     }
 }
 impl fmt::Display for Location {
@@ -425,9 +430,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:403
-  [1] at src/lib.rs:411
-  [2] at src/lib.rs:415
+  [0] at src/lib.rs:408
+  [1] at src/lib.rs:416
+  [2] at src/lib.rs:420
 "#
         );
     }
