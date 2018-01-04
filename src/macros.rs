@@ -441,7 +441,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
 
 #[cfg(test)]
 mod test {
-    use error::{Failure, Failed, ErrorKindExt};
+    use error::{ErrorKindExt, Failed, Failure};
 
     #[test]
     fn track_works() {

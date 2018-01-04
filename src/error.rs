@@ -56,7 +56,7 @@ use std::fmt;
 use std::error::Error;
 use std::sync::Arc;
 
-use super::{TrackingNumber, Location, Trackable};
+use super::{Location, Trackable, TrackingNumber};
 
 /// Boxed `Error` object.
 pub type BoxError = Box<Error + Send + Sync>;
@@ -522,9 +522,8 @@ HISTORY:
 
         // Tries to execute I/O operation
         let result = (|| -> Result<_, MyError> {
-            let f = track!(std::fs::File::open("/path/to/non_existent_file").map_err(
-                MyError::from,
-            ))?;
+            let f =
+                track!(std::fs::File::open("/path/to/non_existent_file").map_err(MyError::from,))?;
             Ok(f)
         })();
         let error = result.err().unwrap();

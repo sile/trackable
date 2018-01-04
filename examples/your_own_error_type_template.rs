@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate trackable;
 
-use trackable::error::{TrackableError, Failure};
+use trackable::error::{Failure, TrackableError};
 use trackable::error::{ErrorKind as TrackableErrorKind, ErrorKindExt};
 
 #[derive(Debug, Clone)]
