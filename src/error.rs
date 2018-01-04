@@ -56,7 +56,7 @@ use std::fmt;
 use std::error::Error;
 use std::sync::Arc;
 
-use super::{Location, Trackable, TrackingNumber};
+use super::{Location, Trackable};
 
 /// Boxed `Error` object.
 pub type BoxError = Box<Error + Send + Sync>;
@@ -113,14 +113,6 @@ pub trait ErrorKind: fmt::Debug {
     /// The default implementation always returns `true`.
     fn is_tracking_needed(&self) -> bool {
         true
-    }
-
-    /// Returns whether the error of this kind is needed
-    /// to be assigned a tracking number automatically.
-    ///
-    /// The default implementation always returns `false`.
-    fn is_assigning_tracking_number_needed(&self) -> bool {
-        false
     }
 }
 impl ErrorKind for String {
@@ -221,7 +213,6 @@ pub trait ErrorKindExt: ErrorKind + Sized {
             kind: self,
             cause: from.cause,
             history: history,
-            tracking_number: from.tracking_number,
         }
     }
 }
@@ -295,20 +286,19 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///
 /// fn main() {
 ///     let mut original = Failed.error();
-///     original.assign_tracking_number();
 ///
 ///     let original = track!(original, "Hello `original`!");
 ///     let forked = original.clone();
 ///     let forked = track!(forked, "Hello `forked`!");
 ///
 ///     assert_eq!(format!("\n{}", original).replace('\\', "/"), r#"
-/// Failed #4d6fdaeeb2cc39a2
+/// Failed
 /// HISTORY:
 ///   [0] at src/error.rs:11 -- Hello `original`!
 /// "#);
 ///
 ///     assert_eq!(format!("\n{}", forked).replace('\\', "/"), r#"
-/// Failed #4d6fdaeeb2cc39a2
+/// Failed
 /// HISTORY:
 ///   [0] at src/error.rs:11 -- Hello `original`!
 ///   [1] at src/error.rs:13 -- Hello `forked`!
@@ -320,7 +310,6 @@ pub struct TrackableError<K> {
     kind: K,
     cause: Option<Arc<BoxError>>,
     history: Option<History>,
-    tracking_number: Option<TrackingNumber>,
 }
 impl<K: ErrorKind> TrackableError<K> {
     /// Makes a new `TrackableError` instance.
@@ -329,12 +318,10 @@ impl<K: ErrorKind> TrackableError<K> {
         E: Into<BoxError>,
     {
         let history = Self::init_history(&kind);
-        let tracking_number = Self::init_tracking_number(&kind);
         TrackableError {
             kind: kind,
             cause: Some(Arc::new(cause.into())),
             history: history,
-            tracking_number: tracking_number,
         }
     }
 
@@ -343,12 +330,10 @@ impl<K: ErrorKind> TrackableError<K> {
     /// Note that the returning error has no cause.
     fn from_kind(kind: K) -> Self {
         let history = Self::init_history(&kind);
-        let tracking_number = Self::init_tracking_number(&kind);
         TrackableError {
             kind: kind,
             cause: None,
             history: history,
-            tracking_number: tracking_number,
         }
     }
 
@@ -375,13 +360,6 @@ impl<K: ErrorKind> TrackableError<K> {
             None
         }
     }
-    fn init_tracking_number(kind: &K) -> Option<TrackingNumber> {
-        if kind.is_assigning_tracking_number_needed() {
-            Some(TrackingNumber::generate())
-        } else {
-            None
-        }
-    }
 }
 impl<K: ErrorKind> From<K> for TrackableError<K> {
     fn from(kind: K) -> Self {
@@ -398,9 +376,6 @@ impl<K: ErrorKind> fmt::Display for TrackableError<K> {
         self.kind.display(f)?;
         if let Some(ref e) = self.cause {
             write!(f, " (cause; {})", e)?;
-        }
-        if let Some(n) = self.tracking_number() {
-            write!(f, " #{}", n)?;
         }
         if let Some(ref h) = self.history {
             write!(f, "\n{}", h)?;
@@ -422,14 +397,6 @@ impl<K: ErrorKind> Error for TrackableError<K> {
 }
 impl<K> Trackable for TrackableError<K> {
     type Event = Event;
-    fn assign_tracking_number(&mut self) {
-        if self.tracking_number.is_none() {
-            self.tracking_number = Some(TrackingNumber::generate());
-        }
-    }
-    fn tracking_number(&self) -> Option<TrackingNumber> {
-        self.tracking_number
-    }
     fn enable_tracking(mut self) -> Self
     where
         Self: Sized,
@@ -515,8 +482,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:511
-  [1] at src/error.rs:512 -- I passed here
+  [0] at src/error.rs:478
+  [1] at src/error.rs:479 -- I passed here
 "#
         );
 
