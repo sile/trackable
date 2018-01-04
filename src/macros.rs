@@ -28,9 +28,9 @@
 /// assert_eq!(format!("\n{}", e.unwrap().err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; something wrong)
 /// HISTORY:
-///   [0] at src/macros.rs:9
-///   [1] at src/macros.rs:13 -- This is a note about this location
-///   [2] at src/macros.rs:17 -- Hello World!
+///   [0] at src/macros.rs:10
+///   [1] at src/macros.rs:14 -- This is a note about this location
+///   [2] at src/macros.rs:18 -- Hello World!
 /// "#);
 /// # }
 /// ```
@@ -93,7 +93,7 @@ macro_rules! track {
 /// assert_eq!(format!("\n{}", r.err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 /// HISTORY:
-///   [0] at src/macros.rs:8
+///   [0] at src/macros.rs:9
 /// "#);
 /// # }
 /// ```
@@ -205,7 +205,7 @@ macro_rules! track_assert_ne {
 /// assert_eq!(format!("\n{}", r.err().unwrap()).replace('\\', "/"), r#"
 /// Failed (cause; assertion failed: `a.checked_sub(b).is_some()`)
 /// HISTORY:
-///   [0] at src/macros.rs:8
+///   [0] at src/macros.rs:9
 /// "#);
 /// # }
 /// ```
@@ -272,14 +272,14 @@ macro_rules! track_assert_some {
 /// assert_eq!(format!("\n{}", e).replace('\\', "/"), r#"
 /// Failed
 /// HISTORY:
-///   [0] at src/macros.rs:9
+///   [0] at src/macros.rs:10
 /// "#);
 ///
 /// let e = foo(|| track_panic!(Failed, "something {}", "wrong") ).err().unwrap();
 /// assert_eq!(format!("\n{}", e).replace('\\', "/"), r#"
 /// Failed (cause; something wrong)
 /// HISTORY:
-///   [0] at src/macros.rs:16
+///   [0] at src/macros.rs:17
 /// "#);
 /// # }
 /// ```

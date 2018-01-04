@@ -112,9 +112,9 @@ pub mod error;
 ///
 ///     assert_eq!(format!("\n{}", o.history().unwrap()).replace('\\', "/"), r#"
 /// HISTORY:
-///   [0] at src/lib.rs:35
-///   [1] at src/lib.rs:36 -- Hello
-///   [2] at src/lib.rs:37 -- Hello World!
+///   [0] at src/lib.rs:36
+///   [1] at src/lib.rs:37 -- Hello
+///   [2] at src/lib.rs:38 -- Hello World!
 /// "#);
 /// }
 /// ```

@@ -37,8 +37,8 @@
 //!     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
-//!   [0] at src/error.rs:30
-//!   [1] at src/error.rs:31 -- I passed here
+//!   [0] at src/error.rs:31
+//!   [1] at src/error.rs:32 -- I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
@@ -191,9 +191,9 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     ///   assert_eq!(format!("\nERROR: {}", e).replace('\\', "/"), r#"
     /// ERROR: Kind1
     /// HISTORY:
-    ///   [0] at src/error.rs:16
+    ///   [0] at src/error.rs:17
     ///   [1] takes over from `Kind0`
-    ///   [2] at src/error.rs:19
+    ///   [2] at src/error.rs:20
     /// "#);
     /// }
     /// ```
@@ -259,8 +259,8 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
-///   [0] at src/error.rs:30
-///   [1] at src/error.rs:31 -- I passed here
+///   [0] at src/error.rs:31
+///   [1] at src/error.rs:32 -- I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
