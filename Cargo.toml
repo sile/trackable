@@ -1,6 +1,6 @@
 [package]
 name = "trackable"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 description = "This library provides a way to track objects manually as an alternative to mechanisms like backtracing"
 homepage = "https://github.com/sile/trackable"
