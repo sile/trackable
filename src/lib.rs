@@ -51,21 +51,12 @@ pub mod error;
 
 /// This trait allows to track an instance of an implementation type.
 ///
-/// A trackable instance has the following properties:
+/// A trackable instance can have a tracking history that manages own backtrace-like (but more general)
+/// [history](struct.History.html) for tracking.
 ///
-/// 1. **Tracking history**:
-///   - It manages own backtrace-like (but more general)
-///     [history](struct.History.html) for tracking.
-///   - You can add entries to the history by calling tracking macros
-///     (e.g., [track!](macro.track.html))
-/// 2. **Tracking mode**:
-///   - You can enable (resp. disable) tracking by calling
-///     `enable_tracking` (resp. `disable_tracking`) method of this trait.
-///   - If some instances of a type are not needed to be trackable (e.g., non critical errors),
-///     it may be useful to disable tracking of those for reducing runtime overhead.
+/// You can add entries to the history by calling tracking macros(e.g., [track!](macro.track.html)).
 ///
-/// See [`TrackableError`](error/struct.TrackableError.html)
-/// as a typical implementaion of this trait.
+/// See [`TrackableError`](error/struct.TrackableError.html) as a typical implementaion of this trait.
 ///
 /// # Examples
 ///
@@ -79,42 +70,29 @@ pub mod error;
 ///
 /// #[derive(Default)]
 /// struct TrackableObject {
-///     history: Option<History<Location>>,
+///     history: History<Location>,
 /// }
 /// impl Trackable for TrackableObject {
 ///     type Event = Location;
-///     fn enable_tracking(mut self) -> Self where Self: Sized {
-///         if self.history.is_none() {
-///             self.history = Some(History::new());
-///         }
-///         self
-///     }
-///     fn disable_tracking(mut self) -> Self where Self: Sized {
-///         self.history = None;
-///         self
-///     }
 ///     fn history(&self) -> Option<&History<Self::Event>> {
-///         self.history.as_ref()
+///         Some(&self.history)
 ///     }
 ///     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
-///         self.history.as_mut()
+///         Some(&mut self.history)
 ///     }
 /// }
 ///
 /// fn main() {
 ///     let o = TrackableObject::default();
-///     let o = track!(o);  // Ignored
-///
-///     let o = o.enable_tracking();
 ///     let o = track!(o);
 ///     let o = track!(o, "Hello");
 ///     let o = track!(o, "Hello {}", "World!");
 ///
-///     assert_eq!(format!("\n{}", o.history().unwrap()).replace('\\', "/"), r#"
+///     assert_eq!(format!("\n{}", o.history).replace('\\', "/"), r#"
 /// HISTORY:
-///   [0] at src/lib.rs:36
-///   [1] at src/lib.rs:37 -- Hello
-///   [2] at src/lib.rs:38 -- Hello World!
+///   [0] at src/lib.rs:23
+///   [1] at src/lib.rs:24 -- Hello
+///   [2] at src/lib.rs:25 -- Hello World!
 /// "#);
 /// }
 /// ```
@@ -133,46 +111,24 @@ pub trait Trackable {
         self.history_mut().map(|h| h.add(f()));
     }
 
-    /// Returns `true` if tracking of this instance is enabled, otherwise `false`.
+    /// Returns `true` if it is being tracked, otherwise `false`.
     #[inline]
     fn in_tracking(&self) -> bool {
         self.history().is_some()
     }
 
-    /// Enables tracking of this instance.
-    fn enable_tracking(self) -> Self
-    where
-        Self: Sized;
-
-    /// Disables tracking of this intance.
-    fn disable_tracking(self) -> Self
-    where
-        Self: Sized;
-
     /// Returns the reference of the tracking history of this instance.
+    ///
+    /// If it is not being tracked, this will return `None.
     fn history(&self) -> Option<&History<Self::Event>>;
 
     /// Returns the mutable reference of the tracking history of this instance.
+    ///
+    /// If it is not being tracked, this will return `None.
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>>;
 }
 impl<T: Trackable> Trackable for Option<T> {
     type Event = T::Event;
-
-    #[inline]
-    fn enable_tracking(self) -> Self
-    where
-        Self: Sized,
-    {
-        self.map(|t| t.enable_tracking())
-    }
-
-    #[inline]
-    fn disable_tracking(self) -> Self
-    where
-        Self: Sized,
-    {
-        self.map(|t| t.disable_tracking())
-    }
 
     #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
@@ -186,22 +142,6 @@ impl<T: Trackable> Trackable for Option<T> {
 }
 impl<T, E: Trackable> Trackable for Result<T, E> {
     type Event = E::Event;
-
-    #[inline]
-    fn enable_tracking(self) -> Self
-    where
-        Self: Sized,
-    {
-        self.map_err(|t| t.enable_tracking())
-    }
-
-    #[inline]
-    fn disable_tracking(self) -> Self
-    where
-        Self: Sized,
-    {
-        self.map_err(|t| t.disable_tracking())
-    }
 
     #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
@@ -388,9 +328,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:367
-  [1] at src/lib.rs:374
-  [2] at src/lib.rs:378
+  [0] at src/lib.rs:307
+  [1] at src/lib.rs:314
+  [2] at src/lib.rs:318
 "#
         );
     }

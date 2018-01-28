@@ -402,20 +402,6 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             type Event = $crate::error::Event;
 
             #[inline]
-            fn enable_tracking(self) -> Self
-                where Self: Sized
-            {
-                From::from(self.0.enable_tracking())
-            }
-
-            #[inline]
-            fn disable_tracking(self) -> Self
-                where Self: Sized
-            {
-                From::from(self.0.disable_tracking())
-            }
-
-            #[inline]
             fn history(&self) -> Option<&$crate::History<Self::Event>> {
                 self.0.history()
             }
@@ -483,7 +469,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:472
+  [0] at src/macros.rs:458
 "#
         );
     }

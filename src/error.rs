@@ -23,11 +23,7 @@
 //!     Critical,
 //!     NonCritical,
 //! }
-//! impl ErrorKind for MyErrorKind {
-//!     fn is_tracking_needed(&self) -> bool {
-//!         *self == MyErrorKind::Critical  // Only critical errors are tracked
-//!     }
-//! }
+//! impl ErrorKind for MyErrorKind {}
 //!
 //! fn main() {
 //!     // Tracks an error
@@ -37,8 +33,8 @@
 //!     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 //! Error: Critical (cause; something wrong)
 //! HISTORY:
-//!   [0] at src/error.rs:31
-//!   [1] at src/error.rs:32 -- I passed here
+//!   [0] at src/error.rs:27
+//!   [1] at src/error.rs:28 -- I passed here
 //! "#);
 //!
 //!     // Tries to execute I/O operation
@@ -107,14 +103,6 @@ pub trait ErrorKind: fmt::Debug {
     fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
-
-    /// Returns whether the error of this kind is needed to be tracked.
-    ///
-    /// The default implementation always returns `true`.
-    #[inline]
-    fn is_tracking_needed(&self) -> bool {
-        true
-    }
 }
 impl ErrorKind for String {
     fn description(&self) -> &str {
@@ -163,9 +151,6 @@ pub trait ErrorKindExt: ErrorKind + Sized {
 
     /// Takes over from other `TrackableError` instance.
     ///
-    /// If either `from.in_tracking()` or `self.is_tracking_needed()` is `true`,
-    /// tracking of the returning `TrackableError` will be enabled.
-    ///
     /// The history of `from` will be preserved.
     ///
     /// # Examples
@@ -205,17 +190,13 @@ pub trait ErrorKindExt: ErrorKind + Sized {
         F: Into<TrackableError<K>>,
         K: ErrorKind + Send + Sync + 'static,
     {
-        let from = from.into();
-        let mut history = from.history;
-        if let Some(ref mut h) = history {
-            h.add(Event::TakeOver(Arc::new(Box::new(from.kind))));
-        } else if self.is_tracking_needed() {
-            history = Some(History::new());
-        }
+        let mut from = from.into();
+        from.history
+            .add(Event::TakeOver(Arc::new(Box::new(from.kind))));
         TrackableError {
             kind: self,
             cause: from.cause,
-            history: history,
+            history: from.history,
         }
     }
 }
@@ -248,11 +229,7 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     Critical,
 ///     NonCritical,
 /// }
-/// impl ErrorKind for MyErrorKind {
-///     fn is_tracking_needed(&self) -> bool {
-///         *self == MyErrorKind::Critical  // Only critical errors are tracked
-///     }
-/// }
+/// impl ErrorKind for MyErrorKind {}
 ///
 /// fn main() {
 ///     // Tracks an error
@@ -262,8 +239,8 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 ///     assert_eq!(format!("\nError: {}", error).replace('\\', "/"), r#"
 /// Error: Critical (cause; something wrong)
 /// HISTORY:
-///   [0] at src/error.rs:31
-///   [1] at src/error.rs:32 -- I passed here
+///   [0] at src/error.rs:27
+///   [1] at src/error.rs:28 -- I passed here
 /// "#);
 ///
 ///     // Tries to execute I/O operation
@@ -312,7 +289,7 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 pub struct TrackableError<K> {
     kind: K,
     cause: Option<Arc<BoxError>>,
-    history: Option<History>,
+    history: History,
 }
 impl<K: ErrorKind> TrackableError<K> {
     /// Makes a new `TrackableError` instance.
@@ -320,11 +297,10 @@ impl<K: ErrorKind> TrackableError<K> {
     where
         E: Into<BoxError>,
     {
-        let history = Self::init_history(&kind);
         TrackableError {
-            kind: kind,
+            kind,
             cause: Some(Arc::new(cause.into())),
-            history: history,
+            history: History::new(),
         }
     }
 
@@ -332,11 +308,10 @@ impl<K: ErrorKind> TrackableError<K> {
     ///
     /// Note that the returning error has no cause.
     fn from_kind(kind: K) -> Self {
-        let history = Self::init_history(&kind);
         TrackableError {
-            kind: kind,
+            kind,
             cause: None,
-            history: history,
+            history: History::new(),
         }
     }
 
@@ -357,14 +332,6 @@ impl<K: ErrorKind> TrackableError<K> {
     {
         self.cause.as_ref().and_then(|c| c.downcast_ref())
     }
-
-    fn init_history(kind: &K) -> Option<History> {
-        if kind.is_tracking_needed() {
-            Some(History::new())
-        } else {
-            None
-        }
-    }
 }
 impl<K: ErrorKind> From<K> for TrackableError<K> {
     #[inline]
@@ -384,9 +351,7 @@ impl<K: ErrorKind> fmt::Display for TrackableError<K> {
         if let Some(ref e) = self.cause {
             write!(f, " (cause; {})", e)?;
         }
-        if let Some(ref h) = self.history {
-            write!(f, "\n{}", h)?;
-        }
+        write!(f, "\n{}", self.history)?;
         Ok(())
     }
 }
@@ -406,33 +371,13 @@ impl<K> Trackable for TrackableError<K> {
     type Event = Event;
 
     #[inline]
-    fn enable_tracking(mut self) -> Self
-    where
-        Self: Sized,
-    {
-        if self.history.is_none() {
-            self.history = Some(History::new());
-        }
-        self
-    }
-
-    #[inline]
-    fn disable_tracking(mut self) -> Self
-    where
-        Self: Sized,
-    {
-        self.history = None;
-        self
-    }
-
-    #[inline]
     fn history(&self) -> Option<&History> {
-        self.history.as_ref()
+        Some(&self.history)
     }
 
     #[inline]
     fn history_mut(&mut self) -> Option<&mut History> {
-        self.history.as_mut()
+        Some(&mut self.history)
     }
 }
 
@@ -483,11 +428,7 @@ mod test {
             Critical,
             NonCritical,
         }
-        impl ErrorKind for MyErrorKind {
-            fn is_tracking_needed(&self) -> bool {
-                *self == MyErrorKind::Critical // Only critical errors are tracked
-            }
-        }
+        impl ErrorKind for MyErrorKind {}
 
         // Tracks an error
         let error: MyError = MyErrorKind::Critical.cause("something wrong").into();
@@ -498,8 +439,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:494
-  [1] at src/error.rs:495 -- I passed here
+  [0] at src/error.rs:435
+  [1] at src/error.rs:436 -- I passed here
 "#
         );
 
