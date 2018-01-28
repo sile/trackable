@@ -111,6 +111,7 @@ pub trait ErrorKind: fmt::Debug {
     /// Returns whether the error of this kind is needed to be tracked.
     ///
     /// The default implementation always returns `true`.
+    #[inline]
     fn is_tracking_needed(&self) -> bool {
         true
     }
@@ -136,6 +137,7 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// let e = Failed.error();
     /// assert!(e.cause().is_none());
     /// ```
+    #[inline]
     fn error(self) -> TrackableError<Self> {
         self.into()
     }
@@ -151,6 +153,7 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// let e = Failed.cause("something wrong");
     /// assert_eq!(e.cause().unwrap().to_string(), "something wrong");
     /// ```
+    #[inline]
     fn cause<E>(self, cause: E) -> TrackableError<Self>
     where
         E: Into<BoxError>,
@@ -338,6 +341,7 @@ impl<K: ErrorKind> TrackableError<K> {
     }
 
     /// Returns the kind of this error.
+    #[inline]
     pub fn kind(&self) -> &K {
         &self.kind
     }
@@ -346,6 +350,7 @@ impl<K: ErrorKind> TrackableError<K> {
     ///
     /// If neither this error has a cause nor it is an `T` value,
     /// this method will return `None`.
+    #[inline]
     pub fn concrete_cause<T>(&self) -> Option<&T>
     where
         T: Error + 'static,
@@ -362,11 +367,13 @@ impl<K: ErrorKind> TrackableError<K> {
     }
 }
 impl<K: ErrorKind> From<K> for TrackableError<K> {
+    #[inline]
     fn from(kind: K) -> Self {
         Self::from_kind(kind)
     }
 }
 impl<K: ErrorKind + Default> Default for TrackableError<K> {
+    #[inline]
     fn default() -> Self {
         Self::from_kind(K::default())
     }
@@ -397,6 +404,8 @@ impl<K: ErrorKind> Error for TrackableError<K> {
 }
 impl<K> Trackable for TrackableError<K> {
     type Event = Event;
+
+    #[inline]
     fn enable_tracking(mut self) -> Self
     where
         Self: Sized,
@@ -406,6 +415,8 @@ impl<K> Trackable for TrackableError<K> {
         }
         self
     }
+
+    #[inline]
     fn disable_tracking(mut self) -> Self
     where
         Self: Sized,
@@ -413,9 +424,13 @@ impl<K> Trackable for TrackableError<K> {
         self.history = None;
         self
     }
+
+    #[inline]
     fn history(&self) -> Option<&History> {
         self.history.as_ref()
     }
+
+    #[inline]
     fn history_mut(&mut self) -> Option<&mut History> {
         self.history.as_mut()
     }
@@ -440,6 +455,7 @@ impl fmt::Display for Event {
     }
 }
 impl From<Location> for Event {
+    #[inline]
     fn from(f: Location) -> Self {
         Event::Track(f)
     }
@@ -482,8 +498,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:478
-  [1] at src/error.rs:479 -- I passed here
+  [0] at src/error.rs:494
+  [1] at src/error.rs:495 -- I passed here
 "#
         );
 

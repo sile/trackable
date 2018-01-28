@@ -378,12 +378,14 @@ macro_rules! derive_traits_for_trackable_error_newtype {
     ($error:ident, $kind:ty) => {
         impl ::std::ops::Deref for $error {
             type Target = $crate::error::TrackableError<$kind>;
+
+            #[inline]
             fn deref(&self) -> &Self::Target {
                 &self.0
             }
         }
         impl ::std::fmt::Display for $error {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 self.0.fmt(f)
             }
         }
@@ -391,40 +393,52 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             fn description(&self) -> &str {
                 self.0.description()
             }
+
             fn cause(&self) -> Option<&::std::error::Error> {
                 self.0.cause()
             }
         }
         impl $crate::Trackable for $error {
             type Event = $crate::error::Event;
+
+            #[inline]
             fn enable_tracking(self) -> Self
                 where Self: Sized
             {
                 From::from(self.0.enable_tracking())
             }
+
+            #[inline]
             fn disable_tracking(self) -> Self
                 where Self: Sized
             {
                 From::from(self.0.disable_tracking())
             }
+
+            #[inline]
             fn history(&self) -> Option<&$crate::History<Self::Event>> {
                 self.0.history()
             }
+
+            #[inline]
             fn history_mut(&mut self) -> Option<&mut $crate::History<Self::Event>> {
                 self.0.history_mut()
             }
         }
         impl From<$crate::error::TrackableError<$kind>> for $error {
+            #[inline]
             fn from(f: $crate::error::TrackableError<$kind>) -> Self {
                 $error(f)
             }
         }
         impl From<$error> for $crate::error::TrackableError<$kind> {
+            #[inline]
             fn from(f: $error) -> Self {
                 f.0
             }
         }
         impl From<$kind> for $error {
+            #[inline]
             fn from(f: $kind) -> Self {
                 use $crate::error::ErrorKindExt;
                 f.error().into()
@@ -469,7 +483,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:458
+  [0] at src/macros.rs:472
 "#
         );
     }

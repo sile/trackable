@@ -125,6 +125,7 @@ pub trait Trackable {
     /// Add an event into the tail of the history of this instance.
     ///
     /// Typically, this is called via [track!](macro.track.html) macro.
+    #[inline]
     fn track<F>(&mut self, f: F)
     where
         F: FnOnce() -> Self::Event,
@@ -133,6 +134,7 @@ pub trait Trackable {
     }
 
     /// Returns `true` if tracking of this instance is enabled, otherwise `false`.
+    #[inline]
     fn in_tracking(&self) -> bool {
         self.history().is_some()
     }
@@ -155,42 +157,58 @@ pub trait Trackable {
 }
 impl<T: Trackable> Trackable for Option<T> {
     type Event = T::Event;
+
+    #[inline]
     fn enable_tracking(self) -> Self
     where
         Self: Sized,
     {
         self.map(|t| t.enable_tracking())
     }
+
+    #[inline]
     fn disable_tracking(self) -> Self
     where
         Self: Sized,
     {
         self.map(|t| t.disable_tracking())
     }
+
+    #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
         self.as_ref().and_then(|t| t.history())
     }
+
+    #[inline]
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
         self.as_mut().and_then(|t| t.history_mut())
     }
 }
 impl<T, E: Trackable> Trackable for Result<T, E> {
     type Event = E::Event;
+
+    #[inline]
     fn enable_tracking(self) -> Self
     where
         Self: Sized,
     {
         self.map_err(|t| t.enable_tracking())
     }
+
+    #[inline]
     fn disable_tracking(self) -> Self
     where
         Self: Sized,
     {
         self.map_err(|t| t.disable_tracking())
     }
+
+    #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
         self.as_ref().err().and_then(|t| t.history())
     }
+
+    #[inline]
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
         self.as_mut().err().and_then(|t| t.history_mut())
     }
@@ -227,16 +245,19 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
 pub struct History<Event>(Vec<Event>);
 impl<Event> History<Event> {
     /// Makes an empty history.
+    #[inline]
     pub fn new() -> Self {
         History(Vec::new())
     }
 
     /// Adds an event to the tail of this history.
+    #[inline]
     pub fn add(&mut self, event: Event) {
         self.0.push(event);
     }
 
     /// Returns the tracked events in this history.
+    #[inline]
     pub fn events(&self) -> &[Event] {
         &self.0[..]
     }
@@ -251,6 +272,7 @@ impl<Event: fmt::Display> fmt::Display for History<Event> {
     }
 }
 impl<Event> Default for History<Event> {
+    #[inline]
     fn default() -> Self {
         History::new()
     }
@@ -277,6 +299,7 @@ impl Location {
     /// let location = Location::new(module_path!(), file!(), line!(), "Hello".to_string());
     /// assert_eq!(location.message(), "Hello");
     /// ```
+    #[inline]
     pub fn new<T>(module_path: &'static str, file: &'static str, line: u32, message: T) -> Self
     where
         T: Into<Cow<'static, str>>,
@@ -290,6 +313,7 @@ impl Location {
     }
 
     /// Gets the crate name of this location.
+    #[inline]
     pub fn crate_name(&self) -> &'static str {
         if let Some(end) = self.module_path.find(':') {
             &self.module_path[..end]
@@ -299,21 +323,25 @@ impl Location {
     }
 
     /// Gets the module path of this location.
+    #[inline]
     pub fn module_path(&self) -> &'static str {
         self.module_path
     }
 
     /// Gets the file name of this location.
+    #[inline]
     pub fn file(&self) -> &'static str {
         self.file
     }
 
     /// Gets the line of this location.
+    #[inline]
     pub fn line(&self) -> u32 {
         self.line
     }
 
     /// Gets the message left at this location.
+    #[inline]
     pub fn message(&self) -> &str {
         self.message.as_ref()
     }
@@ -360,9 +388,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:339
-  [1] at src/lib.rs:346
-  [2] at src/lib.rs:350
+  [0] at src/lib.rs:367
+  [1] at src/lib.rs:374
+  [2] at src/lib.rs:378
 "#
         );
     }
