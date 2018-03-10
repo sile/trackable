@@ -66,20 +66,6 @@ macro_rules! track {
     };
 }
 
-/// The abbreviation of `track!($expr.map_err(From::from), ..)?`.
-#[macro_export]
-macro_rules! track_try {
-    ($target:expr) => {
-        track!($target.map_err(From::from))?
-    };
-    ($target:expr, $message:expr) => {
-        track!($target.map_err(From::from), $message)?
-    };
-    ($target:expr, $($format_arg:tt)+) => {
-        track!($target.map_err(From::from), format!($($format_arg)+))?
-    };
-}
-
 /// Error trackable variant of the standard `assert!` macro.
 ///
 /// This is a simple wrapper of the `track_panic!` macro.
@@ -483,7 +469,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:472
+  [0] at src/macros.rs:458
 "#
         );
     }
