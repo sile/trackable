@@ -245,9 +245,9 @@ impl Location {
         T: Into<Cow<'static, str>>,
     {
         Location {
-            module_path: module_path,
-            file: file,
-            line: line,
+            module_path,
+            file,
+            line,
             message: message.into(),
         }
     }
@@ -255,8 +255,8 @@ impl Location {
     /// Gets the crate name of this location.
     #[inline]
     pub fn crate_name(&self) -> &'static str {
-        if let Some(end) = self.module_path.find(':') {
-            &self.module_path[..end]
+        if let Some(module_path_end) = self.module_path.find(':') {
+            &self.module_path[..module_path_end]
         } else {
             self.module_path
         }
