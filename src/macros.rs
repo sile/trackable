@@ -483,7 +483,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:458
+  [0] at src/macros.rs:472
 "#
         );
     }
