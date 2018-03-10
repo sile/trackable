@@ -66,6 +66,20 @@ macro_rules! track {
     };
 }
 
+/// The abbreviation of `track!($target.map_err(Failure::from_error), ..)`.
+#[macro_export]
+macro_rules! track_any_err {
+    ($target:expr) => {
+        $target.map_err(|e| track!($crate::error::Failure::from_error(e)))
+    };
+    ($target:expr, $message:expr) => {
+        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $message))
+    };
+    ($target:expr, $($format_arg:tt)+) => {
+        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $($format_arg)+))
+    };
+}
+
 /// Error trackable variant of the standard `assert!` macro.
 ///
 /// This is a simple wrapper of the `track_panic!` macro.
