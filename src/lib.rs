@@ -41,6 +41,13 @@
 //! but you can easily define your own trackable error types.
 //! See the documentaion of [error](error/index.html) module for more details.
 #![warn(missing_docs)]
+
+#[cfg(feature = "serialize")]
+extern crate serde;
+#[cfg(feature = "serialize")]
+#[macro_use]
+extern crate serde_derive;
+
 use std::borrow::Cow;
 use std::fmt;
 
@@ -182,6 +189,7 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
 /// "#);
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct History<Event>(Vec<Event>);
 impl<Event> History<Event> {
     /// Makes an empty history.
@@ -222,9 +230,10 @@ impl<Event> Default for History<Event> {
 ///
 /// Typically this is created in the macros which defined in this crate.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Location {
-    module_path: &'static str,
-    file: &'static str,
+    module_path: Cow<'static, str>,
+    file: Cow<'static, str>,
     line: u32,
     message: Cow<'static, str>,
 }
@@ -245,8 +254,8 @@ impl Location {
         T: Into<Cow<'static, str>>,
     {
         Location {
-            module_path,
-            file,
+            module_path: Cow::Borrowed(module_path),
+            file: Cow::Borrowed(file),
             line,
             message: message.into(),
         }
@@ -254,24 +263,24 @@ impl Location {
 
     /// Gets the crate name of this location.
     #[inline]
-    pub fn crate_name(&self) -> &'static str {
+    pub fn crate_name(&self) -> &str {
         if let Some(module_path_end) = self.module_path.find(':') {
             &self.module_path[..module_path_end]
         } else {
-            self.module_path
+            self.module_path.as_ref()
         }
     }
 
     /// Gets the module path of this location.
     #[inline]
-    pub fn module_path(&self) -> &'static str {
-        self.module_path
+    pub fn module_path(&self) -> &str {
+        self.module_path.as_ref()
     }
 
     /// Gets the file name of this location.
     #[inline]
-    pub fn file(&self) -> &'static str {
-        self.file
+    pub fn file(&self) -> &str {
+        self.file.as_ref()
     }
 
     /// Gets the line of this location.
@@ -328,9 +337,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:307
-  [1] at src/lib.rs:314
-  [2] at src/lib.rs:318
+  [0] at src/lib.rs:316
+  [1] at src/lib.rs:323
+  [2] at src/lib.rs:327
 "#
         );
     }

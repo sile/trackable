@@ -61,10 +61,11 @@ pub type BoxError = Box<Error + Send + Sync>;
 pub type BoxErrorKind = Box<ErrorKind + Send + Sync>;
 
 /// `History` type specialized for `TrackableError`.
-pub type History = ::History<Event>;
+pub type History = ::History<Location>;
 
 /// Built-in `ErrorKind` implementation which represents opaque errors.
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Failed;
 impl ErrorKind for Failed {
     fn description(&self) -> &str {
@@ -74,6 +75,7 @@ impl ErrorKind for Failed {
 
 /// `TrackableError` type specialized for `Failed`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Failure(TrackableError<Failed>);
 derive_traits_for_trackable_error_newtype!(Failure, Failed);
 impl Failure {
@@ -180,8 +182,7 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     /// ERROR: Kind1
     /// HISTORY:
     ///   [0] at src/error.rs:17
-    ///   [1] takes over from `Kind0`
-    ///   [2] at src/error.rs:20
+    ///   [1] at src/error.rs:20
     /// "#);
     /// }
     /// ```
@@ -190,9 +191,7 @@ pub trait ErrorKindExt: ErrorKind + Sized {
         F: Into<TrackableError<K>>,
         K: ErrorKind + Send + Sync + 'static,
     {
-        let mut from = from.into();
-        from.history
-            .add(Event::TakeOver(Arc::new(Box::new(from.kind))));
+        let from = from.into();
         TrackableError {
             kind: self,
             cause: from.cause,
@@ -286,9 +285,10 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 /// }
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct TrackableError<K> {
     kind: K,
-    cause: Option<Arc<BoxError>>,
+    cause: Option<Cause>,
     history: History,
 }
 impl<K: ErrorKind> TrackableError<K> {
@@ -299,7 +299,7 @@ impl<K: ErrorKind> TrackableError<K> {
     {
         TrackableError {
             kind,
-            cause: Some(Arc::new(cause.into())),
+            cause: Some(Cause(Arc::new(cause.into()))),
             history: History::new(),
         }
     }
@@ -330,7 +330,7 @@ impl<K: ErrorKind> TrackableError<K> {
     where
         T: Error + 'static,
     {
-        self.cause.as_ref().and_then(|c| c.downcast_ref())
+        self.cause.as_ref().and_then(|c| c.0.downcast_ref())
     }
 }
 impl<K: ErrorKind> From<K> for TrackableError<K> {
@@ -349,7 +349,7 @@ impl<K: ErrorKind> fmt::Display for TrackableError<K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.kind.display(f)?;
         if let Some(ref e) = self.cause {
-            write!(f, " (cause; {})", e)?;
+            write!(f, " (cause; {})", e.0)?;
         }
         write!(f, "\n{}", self.history)?;
         Ok(())
@@ -361,14 +361,14 @@ impl<K: ErrorKind> Error for TrackableError<K> {
     }
     fn cause(&self) -> Option<&Error> {
         if let Some(ref e) = self.cause {
-            Some(&***e)
+            Some(&**e.0)
         } else {
             None
         }
     }
 }
 impl<K> Trackable for TrackableError<K> {
-    type Event = Event;
+    type Event = Location;
 
     #[inline]
     fn history(&self) -> Option<&History> {
@@ -381,28 +381,32 @@ impl<K> Trackable for TrackableError<K> {
     }
 }
 
-/// An event that occurred on an instance of `TrackableError`.
 #[derive(Debug, Clone)]
-pub enum Event {
-    /// The location was saved in the history of error instance.
-    Track(Location),
+struct Cause(Arc<BoxError>);
 
-    /// The old error instance with the kind `BoxErrorKind` was taken over.
-    TakeOver(Arc<BoxErrorKind>),
-}
-impl fmt::Display for Event {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Event::Track(ref l) => write!(f, "{}", l)?,
-            Event::TakeOver(ref k) => write!(f, "takes over from `{:?}`", k)?,
+#[cfg(feature = "serialize")]
+mod impl_serde {
+    use std::sync::Arc;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    use super::Cause;
+
+    impl Serialize for Cause {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_str(&self.0.to_string())
         }
-        Ok(())
     }
-}
-impl From<Location> for Event {
-    #[inline]
-    fn from(f: Location) -> Self {
-        Event::Track(f)
+    impl<'de> Deserialize<'de> for Cause {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(Cause(Arc::new(s.into())))
+        }
     }
 }
 
@@ -439,8 +443,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:435
-  [1] at src/error.rs:436 -- I passed here
+  [0] at src/error.rs:439
+  [1] at src/error.rs:440 -- I passed here
 "#
         );
 

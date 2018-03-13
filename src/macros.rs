@@ -413,7 +413,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             }
         }
         impl $crate::Trackable for $error {
-            type Event = $crate::error::Event;
+            type Event = $crate::Location;
 
             #[inline]
             fn history(&self) -> Option<&$crate::History<Self::Event>> {
