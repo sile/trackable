@@ -18,8 +18,9 @@
 /// let e = track!(e);
 ///
 /// // `Result<_, TrackableError>` implements `Trackable`
+/// let message = "This is a note about this location";
 /// let e: Result<(), _> = Err(e);
-/// let e = track!(e, "This is a note about this location");
+/// let e = track!(e; message);
 ///
 /// // `Option<T: Trackable>` implements `Trackable`
 /// let e = Some(e);
@@ -29,8 +30,8 @@
 /// Failed (cause; something wrong)
 /// HISTORY:
 ///   [0] at src/macros.rs:10
-///   [1] at src/macros.rs:14 -- This is a note about this location
-///   [2] at src/macros.rs:18 -- Hello World!
+///   [1] at src/macros.rs:15 -- message="This is a note about this location"
+///   [2] at src/macros.rs:19 -- Hello World!
 /// "#);
 /// # }
 /// ```
@@ -48,6 +49,9 @@ macro_rules! track {
             target
         }
     };
+    ($target:expr; $($value:expr),+) => {
+        track!($target, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
     ($target:expr, $message:expr) => {
         {
             use $crate::Trackable;
@@ -59,6 +63,9 @@ macro_rules! track {
             target
         }
     };
+    ($target:expr, $message:expr; $($value:expr),+) => {
+        track!($target, concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+    };
     ($target:expr, $($format_arg:tt)+) => {
         {
             track!($target, format!($($format_arg)+))
@@ -67,16 +74,37 @@ macro_rules! track {
 }
 
 /// The abbreviation of `track!($target.map_err(Failure::from_error), ..)`.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate trackable;
+/// #
+/// # fn main() {
+/// use std::sync::mpsc;
+/// use trackable::error::{Failed, ErrorKindExt};
+///
+/// let rx = mpsc::channel::<()>().1;
+/// let result = track_any_err!(rx.recv(), "sender dropped");
+///
+/// assert_eq!(format!("\n{}", result.err().unwrap()).replace('\\', "/"), r#"
+/// Failed (cause; receiving on a closed channel)
+/// HISTORY:
+///   [0] at src/macros.rs:10 -- sender dropped
+/// "#);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! track_any_err {
     ($target:expr) => {
         $target.map_err(|e| track!($crate::error::Failure::from_error(e)))
     };
-    ($target:expr, $message:expr) => {
-        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $message))
+    ($target:expr; $($arg:tt)*) => {
+        $target.map_err(|e| track!($crate::error::Failure::from_error(e); $($arg)*))
     };
-    ($target:expr, $($format_arg:tt)+) => {
-        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $($format_arg)+))
+    ($target:expr, $($arg:tt)*) => {
+        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $($arg)*))
     };
 }
 
@@ -95,7 +123,7 @@ macro_rules! track_any_err {
 /// use trackable::error::{Failed, Failure};
 ///
 /// fn add_positive_f32(a: f32, b: f32) -> Result<f32, Failure> {
-///     track_assert!(a > 0.0 && b > 0.0, Failed);
+///     track_assert!(a > 0.0 && b > 0.0, Failed; a, b);
 ///     Ok(a + b)
 /// }
 ///
@@ -105,7 +133,7 @@ macro_rules! track_any_err {
 /// let r = add_positive_f32(1.0, -2.0); // Err
 /// assert!(r.is_err());
 /// assert_eq!(format!("\n{}", r.err().unwrap()).replace('\\', "/"), r#"
-/// Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
+/// Failed (cause; assertion failed: `a > 0.0 && b > 0.0`; a=1.0, b=-2.0)
 /// HISTORY:
 ///   [0] at src/macros.rs:9
 /// "#);
@@ -118,8 +146,15 @@ macro_rules! track_assert {
             track_panic!($error_kind, "assertion failed: `{}`", stringify!($cond))
         }
     };
-    ($cond:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert!($cond, $error_kind, $fmt,)
+    ($cond:expr, $error_kind:expr; $($value:expr),+) => {
+        track_assert!($cond, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
+    ($cond:expr, $error_kind:expr, $message:expr) => {
+        track_assert!($cond, $error_kind, $message,)
+    };
+    ($cond:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
+        track_assert!($cond, $error_kind,
+                      concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($cond:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if ! $cond {
@@ -145,8 +180,15 @@ macro_rules! track_assert_eq {
                           left, right)
         }
     };
-    ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_eq!($left, $right, $error_kind, $fmt,)
+    ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
+        track_assert_eq!($left, $right, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
+    ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
+        track_assert_eq!($left, $right, $error_kind, $message,)
+    };
+    ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
+        track_assert_eq!($left, $right, $error_kind,
+                         concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -176,8 +218,15 @@ macro_rules! track_assert_ne {
                           left, right)
         }
     };
-    ($left:expr, $right:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_ne!($left, $right, $error_kind, $fmt,)
+    ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
+        track_assert_ne!($left, $right, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
+    ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
+        track_assert_ne!($left, $right, $error_kind, $message,)
+    };
+    ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
+        track_assert_ne!($left, $right, $error_kind,
+                         concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -232,8 +281,15 @@ macro_rules! track_assert_some {
             track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr))
         }
     };
-    ($expr:expr, $error_kind:expr, $fmt:expr) => {
-        track_assert_some!($expr, $error_kind, $fmt,)
+    ($expr:expr; $error_kind:expr; $($value:expr),+) => {
+        track_assert_some!($expr, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
+    ($expr:expr, $error_kind:expr, $message:expr) => {
+        track_assert_some!($expr, $error_kind, $message,)
+    };
+    ($expr:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
+        track_assert_some!($expr, $error_kind,
+                           concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if let Some(v) = $expr {
@@ -306,11 +362,18 @@ macro_rules! track_panic {
             return Err(From::from(e));
         }
     };
+    ($error:expr; $($value:expr),+) => {
+        track_panic!($error, trackable_prepare_values_fmt!($($value),+), $($value),+)
+    };
     ($error_kind:expr, $message:expr) => {
         {
             use $crate::error::ErrorKindExt;
             track_panic!($error_kind.cause($message))
         }
+    };
+    ($error:expr, $message:expr; $($value:expr),+) => {
+        track_panic!($error,
+                     concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($error_kind:expr, $($format_arg:tt)+) => {
         {
@@ -447,6 +510,18 @@ macro_rules! derive_traits_for_trackable_error_newtype {
     }
 }
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! trackable_prepare_values_fmt {
+    () => {};
+    ($value:expr) => {
+        concat!(stringify!($value), "={:?}")
+    };
+    ($value:expr, $($rest:expr),*) => {
+        concat!(stringify!($value), "={:?}, ", trackable_prepare_values_fmt!($($rest),*))
+    };
+}
+
 #[cfg(test)]
 mod test {
     use error::{ErrorKindExt, Failed, Failure};
@@ -483,7 +558,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:472
+  [0] at src/macros.rs:547
 "#
         );
     }
