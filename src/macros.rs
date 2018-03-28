@@ -108,6 +108,20 @@ macro_rules! track_any_err {
     };
 }
 
+/// The abbreviation of `$target.map_err(|e| track!(e, ..))`.
+#[macro_export]
+macro_rules! track_err {
+    ($target:expr) => {
+        $target.map_err(|e| track!(e))
+    };
+    ($target:expr; $($arg:tt)*) => {
+        $target.map_err(|e| track!(e; $($arg)*))
+    };
+    ($target:expr, $($arg:tt)*) => {
+        $target.map_err(|e| track!(e, $($arg)*))
+    };
+}
+
 /// Error trackable variant of the standard `assert!` macro.
 ///
 /// This is a simple wrapper of the `track_panic!` macro.
@@ -558,7 +572,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:547
+  [0] at src/macros.rs:561
 "#
         );
     }
