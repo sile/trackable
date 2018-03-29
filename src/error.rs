@@ -50,6 +50,7 @@
 //! ```
 use std::fmt;
 use std::error::Error;
+use std::io;
 use std::sync::Arc;
 
 use super::{Location, Trackable};
@@ -85,6 +86,31 @@ impl Failure {
         E: Into<BoxError>,
     {
         Failed.cause(error).into()
+    }
+}
+
+/// A variant of `std::io::Error` that implements `Trackable` trait.
+#[derive(Debug, Clone)]
+pub struct IoError(TrackableError<io::ErrorKind>);
+derive_traits_for_trackable_error_newtype!(IoError, io::ErrorKind);
+impl From<IoError> for io::Error {
+    fn from(f: IoError) -> Self {
+        io::Error::new(*f.kind(), f)
+    }
+}
+impl From<io::Error> for IoError {
+    fn from(f: io::Error) -> Self {
+        f.kind().cause(f).into()
+    }
+}
+impl From<Failure> for IoError {
+    fn from(f: Failure) -> Self {
+        io::ErrorKind::Other.takes_over(f).into()
+    }
+}
+impl ErrorKind for io::ErrorKind {
+    fn description(&self) -> &str {
+        "I/O Error"
     }
 }
 
@@ -443,8 +469,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:439
-  [1] at src/error.rs:440 -- I passed here
+  [0] at src/error.rs:465
+  [1] at src/error.rs:466 -- I passed here
 "#
         );
 
