@@ -297,7 +297,7 @@ macro_rules! track_assert_some {
             track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr))
         }
     };
-    ($expr:expr; $error_kind:expr; $($value:expr),+) => {
+    ($expr:expr, $error_kind:expr; $($value:expr),+) => {
         track_assert_some!($expr, $error_kind,
                            trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
