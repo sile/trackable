@@ -307,15 +307,15 @@ impl fmt::Display for Location {
 
 #[cfg(test)]
 mod test {
-    use error::Failure;
     use super::*;
+    use error::Failure;
 
     #[test]
     fn it_works() {
         fn foo() -> Result<(), Failure> {
             track!(
                 std::fs::File::open("/path/to/non_existent_file")
-                    .map_err(|e| Failure::from_error(format!("{:?}", e.kind())),)
+                    .map_err(|e| Failure::from_error(format!("{:?}", e.kind())))
             )?;
             Ok(())
         }

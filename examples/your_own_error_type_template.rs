@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate trackable;
 
-use trackable::error::{Failure, TrackableError};
 use trackable::error::{ErrorKind as TrackableErrorKind, ErrorKindExt};
+use trackable::error::{Failure, TrackableError};
 
 #[derive(Debug, Clone)]
 pub struct Error(TrackableError<ErrorKind>);

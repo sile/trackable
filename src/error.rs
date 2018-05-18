@@ -48,8 +48,8 @@
 //!     assert_eq!(cause.kind(), std::io::ErrorKind::NotFound);
 //! }
 //! ```
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 use std::io;
 use std::sync::Arc;
 
@@ -412,8 +412,8 @@ struct Cause(Arc<BoxError>);
 
 #[cfg(feature = "serialize")]
 mod impl_serde {
-    use std::sync::Arc;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::sync::Arc;
 
     use super::Cause;
 
@@ -438,8 +438,8 @@ mod impl_serde {
 
 #[cfg(test)]
 mod test {
-    use std;
     use super::*;
+    use std;
 
     #[test]
     fn it_works() {

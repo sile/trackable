@@ -195,7 +195,8 @@ macro_rules! track_assert_eq {
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert_eq!($left, $right, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        track_assert_eq!($left, $right, $error_kind,
+                         trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
         track_assert_eq!($left, $right, $error_kind, $message,)
@@ -233,7 +234,8 @@ macro_rules! track_assert_ne {
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert_ne!($left, $right, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        track_assert_ne!($left, $right, $error_kind,
+                         trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
         track_assert_ne!($left, $right, $error_kind, $message,)
@@ -296,7 +298,8 @@ macro_rules! track_assert_some {
         }
     };
     ($expr:expr; $error_kind:expr; $($value:expr),+) => {
-        track_assert_some!($expr, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        track_assert_some!($expr, $error_kind,
+                           trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $message:expr) => {
         track_assert_some!($expr, $error_kind, $message,)
@@ -476,7 +479,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             }
         }
         impl ::std::fmt::Display for $error {
-             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 self.0.fmt(f)
             }
         }
@@ -521,7 +524,7 @@ macro_rules! derive_traits_for_trackable_error_newtype {
                 f.error().into()
             }
         }
-    }
+    };
 }
 
 #[doc(hidden)]
@@ -572,7 +575,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:561
+  [0] at src/macros.rs:564
 "#
         );
     }
