@@ -249,13 +249,15 @@ impl Location {
     /// assert_eq!(location.message(), "Hello");
     /// ```
     #[inline]
-    pub fn new<T>(module_path: &'static str, file: &'static str, line: u32, message: T) -> Self
+    pub fn new<M, F, T>(module_path: M, file: F, line: u32, message: T) -> Self
     where
+        M: Into<Cow<'static, str>>,
+        F: Into<Cow<'static, str>>,
         T: Into<Cow<'static, str>>,
     {
         Location {
-            module_path: Cow::Borrowed(module_path),
-            file: Cow::Borrowed(file),
+            module_path: module_path.into(),
+            file: file.into(),
             line,
             message: message.into(),
         }
@@ -337,9 +339,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:316
-  [1] at src/lib.rs:323
-  [2] at src/lib.rs:327
+  [0] at src/lib.rs:318
+  [1] at src/lib.rs:325
+  [2] at src/lib.rs:329
 "#
         );
     }
