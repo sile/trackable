@@ -115,7 +115,9 @@ pub trait Trackable {
     where
         F: FnOnce() -> Self::Event,
     {
-        self.history_mut().map(|h| h.add(f()));
+        if let Some(h) = self.history_mut() {
+            h.add(f())
+        }
     }
 
     /// Returns `true` if it is being tracked, otherwise `false`.
@@ -339,9 +341,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:318
-  [1] at src/lib.rs:325
-  [2] at src/lib.rs:329
+  [0] at src/lib.rs:320
+  [1] at src/lib.rs:327
+  [2] at src/lib.rs:331
 "#
         );
     }
