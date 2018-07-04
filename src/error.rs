@@ -114,6 +114,33 @@ impl ErrorKind for io::ErrorKind {
     }
 }
 
+/// An `Error` type for `main` function.
+pub struct MainError(Box<dyn Error>);
+impl<E: Error + Trackable + 'static> From<E> for MainError {
+    fn from(e: E) -> Self {
+        MainError(Box::new(e))
+    }
+}
+impl fmt::Debug for MainError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl fmt::Display for MainError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl Error for MainError {
+    fn description(&self) -> &str {
+        self.0.description()
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        Some(&*self.0)
+    }
+}
+
 /// This trait represents a error kind which `TrackableError` can have.
 pub trait ErrorKind: fmt::Debug {
     /// A short description of the error kind.
@@ -469,8 +496,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:465
-  [1] at src/error.rs:466 -- I passed here
+  [0] at src/error.rs:492
+  [1] at src/error.rs:493 -- I passed here
 "#
         );
 
