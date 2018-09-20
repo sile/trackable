@@ -47,12 +47,22 @@ extern crate serde;
 #[cfg(feature = "serialize")]
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate trackable_derive;
 
 use std::borrow::Cow;
 use std::fmt;
 
+#[doc(hidden)]
+pub use trackable_derive::*;
+
 #[macro_use]
 mod macros;
+
+// for `trackable_derive`
+mod trackable {
+    pub use super::*;
+}
 
 pub mod error;
 
@@ -341,9 +351,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:320
-  [1] at src/lib.rs:327
-  [2] at src/lib.rs:331
+  [0] at src/lib.rs:330
+  [1] at src/lib.rs:337
+  [2] at src/lib.rs:341
 "#
         );
     }

@@ -7,9 +7,9 @@
 //! extern crate trackable;
 //! use trackable::error::{TrackableError, ErrorKind, ErrorKindExt};
 //!
-//! #[derive(Debug)]
+//! #[derive(Debug, TrackableError)]
+//! #[trackable(error_kind = "MyErrorKind")]
 //! struct MyError(TrackableError<MyErrorKind>);
-//! derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
 //! impl From<std::io::Error> for MyError {
 //!     fn from(f: std::io::Error) -> Self {
 //!         // Any I/O errors are considered critical
@@ -48,6 +48,23 @@
 //!     assert_eq!(cause.kind(), std::io::ErrorKind::NotFound);
 //! }
 //! ```
+//!
+//! # `TrackableError` drive macro
+//!
+//! If it is specified (i.e., `#[derive(TrackableError)]`),
+//! the following traits will be automatically implemented in the target error type:
+//! - `Trackable`
+//! - `Error`
+//! - `Display`
+//! - `Deref<Target = TrackableError<$error_kind>>`
+//! - `From<$error_kind>`
+//! - `From<TrackableError<$error_kind>>`
+//! - `From<$target_error_type> for TrackableError<$error_kind>`
+//!
+//! The default value of `$error_kind` is `ErrorKind`.
+//! It can be customized by using `#[trackable(error_type = "$error_kind")]` attribute.
+//!
+//! The target error type must be a newtype (i.e., a tuple struct that has a single element) of `TrackableError`.
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -75,10 +92,10 @@ impl ErrorKind for Failed {
 }
 
 /// `TrackableError` type specialized for `Failed`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TrackableError)]
+#[trackable(error_kind = "Failed")]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Failure(TrackableError<Failed>);
-derive_traits_for_trackable_error_newtype!(Failure, Failed);
 impl Failure {
     /// Makes a new `Failure` instance which was caused by the `error`.
     pub fn from_error<E>(error: E) -> Self
@@ -90,9 +107,9 @@ impl Failure {
 }
 
 /// A variant of `std::io::Error` that implements `Trackable` trait.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, TrackableError)]
+#[trackable(error_kind = "io::ErrorKind")]
 pub struct IoError(TrackableError<io::ErrorKind>);
-derive_traits_for_trackable_error_newtype!(IoError, io::ErrorKind);
 impl From<IoError> for io::Error {
     fn from(f: IoError) -> Self {
         io::Error::new(*f.kind(), f)
@@ -265,9 +282,9 @@ impl<T: ErrorKind> ErrorKindExt for T {}
 /// extern crate trackable;
 /// use trackable::error::{TrackableError, ErrorKind, ErrorKindExt};
 ///
-/// #[derive(Debug)]
+/// #[derive(Debug, TrackableError)]
+/// #[trackable(error_kind = "MyErrorKind")]
 /// struct MyError(TrackableError<MyErrorKind>);
-/// derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
 /// impl From<std::io::Error> for MyError {
 ///     fn from(f: std::io::Error) -> Self {
 ///         // Any I/O errors are considered critical
@@ -470,9 +487,9 @@ mod test {
 
     #[test]
     fn it_works() {
-        #[derive(Debug)]
+        #[derive(Debug, TrackableError)]
+        #[trackable(error_kind = "MyErrorKind")]
         struct MyError(TrackableError<MyErrorKind>);
-        derive_traits_for_trackable_error_newtype!(MyError, MyErrorKind);
         impl From<std::io::Error> for MyError {
             fn from(f: std::io::Error) -> Self {
                 // Any I/O errors are considered critical
@@ -496,8 +513,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:492
-  [1] at src/error.rs:493 -- I passed here
+  [0] at src/error.rs:509
+  [1] at src/error.rs:510 -- I passed here
 "#
         );
 

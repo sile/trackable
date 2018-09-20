@@ -467,6 +467,10 @@ macro_rules! track_try_unwrap {
 ///
 /// # fn main() {}
 /// ```
+#[deprecated(
+    since = "0.2.19",
+    note = "please use `#[derive(TrackableError)]` instead"
+)]
 #[macro_export]
 macro_rules! derive_traits_for_trackable_error_newtype {
     ($error:ident, $kind:ty) => {
@@ -575,7 +579,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:564
+  [0] at src/macros.rs:568
 "#
         );
     }
