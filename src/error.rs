@@ -131,6 +131,9 @@ impl ErrorKind for io::ErrorKind {
     }
 }
 
+/// An `Error` type for unit tests.
+pub type TestError = MainError;
+
 /// An `Error` type for `main` function.
 pub struct MainError(Box<dyn Error>);
 impl<E: Error + Trackable + 'static> From<E> for MainError {
@@ -513,8 +516,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:509
-  [1] at src/error.rs:510 -- I passed here
+  [0] at src/error.rs:512
+  [1] at src/error.rs:513 -- I passed here
 "#
         );
 
