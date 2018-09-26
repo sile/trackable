@@ -65,6 +65,7 @@ mod trackable {
 }
 
 pub mod error;
+pub mod result;
 
 /// This trait allows to track an instance of an implementation type.
 ///
@@ -351,9 +352,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:330
-  [1] at src/lib.rs:337
-  [2] at src/lib.rs:341
+  [0] at src/lib.rs:331
+  [1] at src/lib.rs:338
+  [2] at src/lib.rs:342
 "#
         );
     }
