@@ -488,12 +488,8 @@ macro_rules! derive_traits_for_trackable_error_newtype {
             }
         }
         impl ::std::error::Error for $error {
-            fn description(&self) -> &str {
-                self.0.description()
-            }
-
-            fn cause(&self) -> Option<&::std::error::Error> {
-                self.0.cause()
+            fn source(&self) -> Option<&(::std::error::Error + 'static)> {
+                self.0.source()
             }
         }
         impl $crate::Trackable for $error {
@@ -579,7 +575,7 @@ mod test {
             r#"
 Failed (cause; assertion failed: `a > 0.0 && b > 0.0`)
 HISTORY:
-  [0] at src/macros.rs:568
+  [0] at src/macros.rs:564
 "#
         );
     }

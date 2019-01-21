@@ -152,11 +152,7 @@ impl fmt::Display for MainError {
     }
 }
 impl Error for MainError {
-    fn description(&self) -> &str {
-        self.0.description()
-    }
-
-    fn cause(&self) -> Option<&Error> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&*self.0)
     }
 }
@@ -516,8 +512,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:512
-  [1] at src/error.rs:513 -- I passed here
+  [0] at src/error.rs:508
+  [1] at src/error.rs:509 -- I passed here
 "#
         );
 

@@ -351,8 +351,8 @@ mod test {
 Failed (cause; NotFound)
 HISTORY:
   [0] at src/lib.rs:331
-  [1] at src/lib.rs:338
-  [2] at src/lib.rs:342
+  [1] at src/lib.rs:336
+  [2] at src/lib.rs:340
 "#
         );
     }
