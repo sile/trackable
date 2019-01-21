@@ -328,10 +328,8 @@ mod test {
     #[test]
     fn it_works() {
         fn foo() -> Result<(), Failure> {
-            track!(
-                std::fs::File::open("/path/to/non_existent_file")
-                    .map_err(|e| Failure::from_error(format!("{:?}", e.kind())))
-            )?;
+            track!(std::fs::File::open("/path/to/non_existent_file")
+                .map_err(|e| Failure::from_error(format!("{:?}", e.kind()))))?;
             Ok(())
         }
         fn bar() -> Result<(), Failure> {
