@@ -152,12 +152,12 @@ impl<T: Trackable> Trackable for Option<T> {
 
     #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
-        self.as_ref().and_then(|t| t.history())
+        self.as_ref().and_then(Trackable::history)
     }
 
     #[inline]
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
-        self.as_mut().and_then(|t| t.history_mut())
+        self.as_mut().and_then(Trackable::history_mut)
     }
 }
 impl<T, E: Trackable> Trackable for Result<T, E> {
@@ -165,12 +165,12 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
 
     #[inline]
     fn history(&self) -> Option<&History<Self::Event>> {
-        self.as_ref().err().and_then(|t| t.history())
+        self.as_ref().err().and_then(Trackable::history)
     }
 
     #[inline]
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
-        self.as_mut().err().and_then(|t| t.history_mut())
+        self.as_mut().err().and_then(Trackable::history_mut)
     }
 }
 
