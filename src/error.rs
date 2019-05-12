@@ -515,8 +515,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:508
-  [1] at src/error.rs:509 -- I passed here
+  [0] at src/error.rs:511
+  [1] at src/error.rs:512 -- I passed here
 "#
         );
 
