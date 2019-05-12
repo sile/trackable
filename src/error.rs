@@ -132,26 +132,29 @@ impl ErrorKind for io::ErrorKind {
 }
 
 /// An `Error` type for unit tests.
-pub type TestError = MainError;
+pub type TestError = TopLevelError;
 
 /// An `Error` type for `main` function.
-pub struct MainError(Box<dyn Error>);
-impl<E: Error + Trackable + 'static> From<E> for MainError {
+pub type MainError = TopLevelError;
+
+/// An `Error` type for top-level functions.
+pub struct TopLevelError(Box<dyn Error>);
+impl<E: Error + Trackable + 'static> From<E> for TopLevelError {
     fn from(e: E) -> Self {
-        MainError(Box::new(e))
+        TopLevelError(Box::new(e))
     }
 }
-impl fmt::Debug for MainError {
+impl fmt::Debug for TopLevelError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
-impl fmt::Display for MainError {
+impl fmt::Display for TopLevelError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
-impl Error for MainError {
+impl Error for TopLevelError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&*self.0)
     }
