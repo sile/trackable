@@ -160,7 +160,7 @@ impl Error for TopLevelError {
     }
 }
 
-/// This trait represents a error kind which `TrackableError` can have.
+/// This trait represents an error kind which `TrackableError` can have.
 pub trait ErrorKind: fmt::Debug {
     /// A short description of the error kind.
     ///
