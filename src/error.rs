@@ -73,10 +73,10 @@ use std::sync::Arc;
 use super::{Location, Trackable};
 
 /// Boxed `Error` object.
-pub type BoxError = Box<Error + Send + Sync>;
+pub type BoxError = Box<dyn Error + Send + Sync>;
 
 /// Boxed `ErrorKind` object.
-pub type BoxErrorKind = Box<ErrorKind + Send + Sync>;
+pub type BoxErrorKind = Box<dyn ErrorKind + Send + Sync>;
 
 /// `History` type specialized for `TrackableError`.
 pub type History = ::History<Location>;
@@ -431,7 +431,7 @@ impl<K: ErrorKind> Error for TrackableError<K> {
     fn description(&self) -> &str {
         self.kind.description()
     }
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         if let Some(ref e) = self.cause {
             Some(&**e.0)
         } else {
