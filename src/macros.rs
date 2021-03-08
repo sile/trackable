@@ -50,7 +50,7 @@ macro_rules! track {
         }
     };
     ($target:expr; $($value:expr),+) => {
-        track!($target, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track!($target, trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($target:expr, $message:expr) => {
         {
@@ -64,11 +64,11 @@ macro_rules! track {
         }
     };
     ($target:expr, $message:expr; $($value:expr),+) => {
-        track!($target, concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track!($target, concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($target:expr, $($format_arg:tt)+) => {
         {
-            track!($target, format!($($format_arg)+))
+            $crate::track!($target, format!($($format_arg)+))
         }
     };
 }
@@ -98,13 +98,13 @@ macro_rules! track {
 #[macro_export]
 macro_rules! track_any_err {
     ($target:expr) => {
-        $target.map_err(|e| track!($crate::error::Failure::from_error(e)))
+        $target.map_err(|e| $crate::track!($crate::error::Failure::from_error(e)))
     };
     ($target:expr; $($arg:tt)*) => {
-        $target.map_err(|e| track!($crate::error::Failure::from_error(e); $($arg)*))
+        $target.map_err(|e| $crate::track!($crate::error::Failure::from_error(e); $($arg)*))
     };
     ($target:expr, $($arg:tt)*) => {
-        $target.map_err(|e| track!($crate::error::Failure::from_error(e), $($arg)*))
+        $target.map_err(|e| $crate::track!($crate::error::Failure::from_error(e), $($arg)*))
     };
 }
 
@@ -112,13 +112,13 @@ macro_rules! track_any_err {
 #[macro_export]
 macro_rules! track_err {
     ($target:expr) => {
-        $target.map_err(|e| track!(e))
+        $target.map_err(|e| $crate::track!(e))
     };
     ($target:expr; $($arg:tt)*) => {
-        $target.map_err(|e| track!(e; $($arg)*))
+        $target.map_err(|e| $crate::track!(e; $($arg)*))
     };
     ($target:expr, $($arg:tt)*) => {
-        $target.map_err(|e| track!(e, $($arg)*))
+        $target.map_err(|e| $crate::track!(e, $($arg)*))
     };
 }
 
@@ -375,7 +375,7 @@ macro_rules! track_panic {
     ($error:expr) => {
         {
             let e = $crate::error::TrackableError::from($error);
-            let e = track!(e);
+            let e = $crate::track!(e);
             return Err(From::from(e));
         }
     };
@@ -424,13 +424,13 @@ macro_rules! track_panic {
 #[macro_export]
 macro_rules! track_try_unwrap {
     ($expr:expr) => {
-        match track!($expr) {
+        match $crate::track!($expr) {
             Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e) }
             Ok(v) => { v }
         }
     };
     ($expr:expr, $($format_arg:tt)*) => {
-        match track!($expr, $($format_arg)*) {
+        match $crate::track!($expr, $($format_arg)*) {
             Err(e) => { panic!("\nEXPRESSION: {}\nERROR: {}\n", stringify!($expr), e) }
             Ok(v) => { v }
         }
