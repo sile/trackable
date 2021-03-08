@@ -50,7 +50,7 @@ macro_rules! track {
         }
     };
     ($target:expr; $($value:expr),+) => {
-        $crate::track!($target, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track!($target, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($target:expr, $message:expr) => {
         {
@@ -64,7 +64,7 @@ macro_rules! track {
         }
     };
     ($target:expr, $message:expr; $($value:expr),+) => {
-        $crate::track!($target, concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track!($target, concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($target:expr, $($format_arg:tt)+) => {
         {
@@ -157,22 +157,22 @@ macro_rules! track_err {
 macro_rules! track_assert {
     ($cond:expr, $error_kind:expr) => {
         if ! $cond {
-            track_panic!($error_kind, "assertion failed: `{}`", stringify!($cond))
+            $crate::track_panic!($error_kind, "assertion failed: `{}`", stringify!($cond))
         }
     };
     ($cond:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert!($cond, $error_kind, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        track_assert!($cond, $error_kind, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($cond:expr, $error_kind:expr, $message:expr) => {
         track_assert!($cond, $error_kind, $message,)
     };
     ($cond:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
         track_assert!($cond, $error_kind,
-                      concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+                      concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($cond:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if ! $cond {
-            track_panic!($error_kind,
+            $crate::track_panic!($error_kind,
                          concat!("assertion failed: `{}`; ", $fmt),
                          stringify!($cond), $($arg)*)
         }
@@ -189,27 +189,27 @@ macro_rules! track_assert_eq {
         {
             let left = &$left;
             let right = &$right;
-            track_assert!(left == right, $error_kind,
+            $crate::track_assert!(left == right, $error_kind,
                           "assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`)",
                           left, right)
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
         track_assert_eq!($left, $right, $error_kind,
-                         trackable_prepare_values_fmt!($($value),+), $($value),+)
+                         $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
         track_assert_eq!($left, $right, $error_kind, $message,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
         track_assert_eq!($left, $right, $error_kind,
-                         concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+                         concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
             let left = &$left;
             let right = &$right;
-            track_assert!(
+            $crate::track_assert!(
                 left == right, $error_kind,
                 concat!("assertion failed: `(left == right)` (left: `{:?}`, right: `{:?}`): ",
                         $fmt),
@@ -228,27 +228,27 @@ macro_rules! track_assert_ne {
         {
             let left = &$left;
             let right = &$right;
-            track_assert!(left != right, $error_kind,
+            $crate::track_assert!(left != right, $error_kind,
                           "assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`)",
                           left, right)
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
         track_assert_ne!($left, $right, $error_kind,
-                         trackable_prepare_values_fmt!($($value),+), $($value),+)
+                         $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
         track_assert_ne!($left, $right, $error_kind, $message,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
         track_assert_ne!($left, $right, $error_kind,
-                         concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+                         concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
             let left = &$left;
             let right = &$right;
-            track_assert!(
+            $crate::track_assert!(
                 left != right, $error_kind,
                 concat!("assertion failed: `(left != right)` (left: `{:?}`, right: `{:?}`): ",
                         $fmt),
@@ -294,25 +294,25 @@ macro_rules! track_assert_some {
         if let Some(v) = $expr {
             v
         } else {
-            track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr))
+            $crate::track_panic!($error_kind, "assertion failed: `{}.is_some()`", stringify!($expr))
         }
     };
     ($expr:expr, $error_kind:expr; $($value:expr),+) => {
         track_assert_some!($expr, $error_kind,
-                           trackable_prepare_values_fmt!($($value),+), $($value),+)
+                           $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $message:expr) => {
         track_assert_some!($expr, $error_kind, $message,)
     };
     ($expr:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
         track_assert_some!($expr, $error_kind,
-                           concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+                           concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if let Some(v) = $expr {
             v
         } else {
-            track_panic!($error_kind,
+            $crate::track_panic!($error_kind,
                          concat!("assertion failed: `{}.is_some()`; ", $fmt),
                          stringify!($expr), $($arg)*)
         }
@@ -380,7 +380,7 @@ macro_rules! track_panic {
         }
     };
     ($error:expr; $($value:expr),+) => {
-        track_panic!($error, trackable_prepare_values_fmt!($($value),+), $($value),+)
+        track_panic!($error, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($error_kind:expr, $message:expr) => {
         {
@@ -390,7 +390,7 @@ macro_rules! track_panic {
     };
     ($error:expr, $message:expr; $($value:expr),+) => {
         track_panic!($error,
-                     concat!($message, "; ", trackable_prepare_values_fmt!($($value),+)), $($value),+)
+                     concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($error_kind:expr, $($format_arg:tt)+) => {
         {
