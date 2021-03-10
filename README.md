@@ -3,8 +3,8 @@ trackable
 
 [![Crates.io: trackable](https://img.shields.io/crates/v/trackable.svg)](https://crates.io/crates/trackable)
 [![Documentation](https://docs.rs/trackable/badge.svg)](https://docs.rs/trackable)
-[![Build Status](https://travis-ci.org/sile/trackable.svg?branch=master)](https://travis-ci.org/sile/trackable)
-[![Code Coverage](https://codecov.io/gh/sile/trackable/branch/master/graph/badge.svg)](https://codecov.io/gh/sile/trackable/branch/master)
+[![Actions Status](https://github.com/sile/trackable/workflows/CI/badge.svg)](https://github.com/sile/trackable/actions)
+[![Coverage Status](https://coveralls.io/repos/github/sile/trackable/badge.svg?branch=master)](https://coveralls.io/github/sile/trackable?branch=master)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 `trackable` provides functionalities to define trackable objects and track those.

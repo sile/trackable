@@ -9,8 +9,7 @@ readme = "README.md"
 license = "MIT"
 
 [badges]
-travis-ci = {repository = "sile/trackable"}
-codecov = {repository = "sile/trackable"}
+coveralls = {repository = "sile/trackable"}
 
 [dependencies]
 serde = { version = "1", optional = true }
