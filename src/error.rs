@@ -499,6 +499,7 @@ mod test {
             }
         }
 
+        #[allow(dead_code)]
         #[derive(Debug, PartialEq, Eq)]
         enum MyErrorKind {
             Critical,
@@ -515,8 +516,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:511
-  [1] at src/error.rs:512 -- I passed here
+  [0] at src/error.rs:512
+  [1] at src/error.rs:513 -- I passed here
 "#
         );
 
