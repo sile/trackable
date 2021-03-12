@@ -432,11 +432,7 @@ impl<K: ErrorKind> Error for TrackableError<K> {
         self.kind.description()
     }
     fn cause(&self) -> Option<&dyn Error> {
-        if let Some(ref e) = self.cause {
-            Some(&**e.0)
-        } else {
-            None
-        }
+        self.cause.as_ref().map::<&dyn Error, _>(|e| &**e.0)
     }
 }
 impl<K> Trackable for TrackableError<K> {
@@ -499,6 +495,7 @@ mod test {
             }
         }
 
+        #[allow(dead_code)]
         #[derive(Debug, PartialEq, Eq)]
         enum MyErrorKind {
             Critical,
@@ -515,8 +512,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:511
-  [1] at src/error.rs:512 -- I passed here
+  [0] at src/error.rs:508
+  [1] at src/error.rs:509 -- I passed here
 "#
         );
 
