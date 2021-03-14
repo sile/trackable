@@ -132,8 +132,8 @@ mod test {
             r#"
 Error: Critical (cause; something wrong)
 HISTORY:
-  [0] at src/error.rs:131
-  [1] at src/error.rs:132 -- I passed here
+  [0] at src/error.rs:128
+  [1] at src/error.rs:129 -- I passed here
 "#
         );
 

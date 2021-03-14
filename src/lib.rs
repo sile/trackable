@@ -42,12 +42,8 @@
 //! See the documentaion of [error](error/index.html) module for more details.
 #![warn(missing_docs)]
 
-#[cfg(feature = "serialize")]
-extern crate serde;
-#[cfg(feature = "serialize")]
-#[macro_use]
-extern crate serde_derive;
 extern crate trackable1;
+#[cfg_attr(test, macro_use)]
 extern crate trackable_derive;
 
 #[doc(hidden)]
@@ -100,9 +96,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:86
-  [1] at src/lib.rs:91
-  [2] at src/lib.rs:95
+  [0] at src/lib.rs:77
+  [1] at src/lib.rs:82
+  [2] at src/lib.rs:86
 "#
         );
     }
