@@ -52,6 +52,7 @@ extern crate trackable_derive;
 
 use std::borrow::Cow;
 use std::fmt;
+use std::task::Poll;
 
 #[doc(hidden)]
 pub use trackable_derive::*;
@@ -171,6 +172,28 @@ impl<T, E: Trackable> Trackable for Result<T, E> {
     #[inline]
     fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
         self.as_mut().err().and_then(Trackable::history_mut)
+    }
+}
+
+impl<T: Trackable> Trackable for Poll<T> {
+    type Event = T::Event;
+
+    #[inline]
+    fn history(&self) -> Option<&History<Self::Event>> {
+        if let Poll::Ready(x) = self {
+            x.history()
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn history_mut(&mut self) -> Option<&mut History<Self::Event>> {
+        if let Poll::Ready(x) = self {
+            x.history_mut()
+        } else {
+            None
+        }
     }
 }
 
@@ -350,9 +373,9 @@ mod test {
             r#"
 Failed (cause; NotFound)
 HISTORY:
-  [0] at src/lib.rs:331
-  [1] at src/lib.rs:336
-  [2] at src/lib.rs:340
+  [0] at src/lib.rs:354
+  [1] at src/lib.rs:359
+  [2] at src/lib.rs:363
 "#
         );
     }
