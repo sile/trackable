@@ -161,14 +161,14 @@ macro_rules! track_assert {
         }
     };
     ($cond:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert!($cond, $error_kind, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track_assert!($cond, $error_kind, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($cond:expr, $error_kind:expr, $message:expr) => {
-        track_assert!($cond, $error_kind, $message,)
+        $crate::track_assert!($cond, $error_kind, $message,)
     };
     ($cond:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
-        track_assert!($cond, $error_kind,
-                      concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track_assert!($cond, $error_kind,
+                              concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($cond:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if ! $cond {
@@ -195,15 +195,15 @@ macro_rules! track_assert_eq {
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert_eq!($left, $right, $error_kind,
-                         $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track_assert_eq!($left, $right, $error_kind,
+                                 $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
-        track_assert_eq!($left, $right, $error_kind, $message,)
+        $crate::track_assert_eq!($left, $right, $error_kind, $message,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
-        track_assert_eq!($left, $right, $error_kind,
-                         concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track_assert_eq!($left, $right, $error_kind,
+                                 concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -234,15 +234,15 @@ macro_rules! track_assert_ne {
         }
     };
     ($left:expr, $right:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert_ne!($left, $right, $error_kind,
-                         $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track_assert_ne!($left, $right, $error_kind,
+                                 $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr) => {
-        track_assert_ne!($left, $right, $error_kind, $message,)
+        $crate::track_assert_ne!($left, $right, $error_kind, $message,)
     };
     ($left:expr, $right:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
-        track_assert_ne!($left, $right, $error_kind,
-                         concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track_assert_ne!($left, $right, $error_kind,
+                                 concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($left:expr, $right:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         {
@@ -298,15 +298,15 @@ macro_rules! track_assert_some {
         }
     };
     ($expr:expr, $error_kind:expr; $($value:expr),+) => {
-        track_assert_some!($expr, $error_kind,
-                           $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track_assert_some!($expr, $error_kind,
+                                   $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $message:expr) => {
-        track_assert_some!($expr, $error_kind, $message,)
+        $crate::track_assert_some!($expr, $error_kind, $message,)
     };
     ($expr:expr, $error_kind:expr, $message:expr; $($value:expr),+) => {
-        track_assert_some!($expr, $error_kind,
-                           concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track_assert_some!($expr, $error_kind,
+                                   concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($expr:expr, $error_kind:expr, $fmt:expr, $($arg:tt)*) => {
         if let Some(v) = $expr {
@@ -380,21 +380,21 @@ macro_rules! track_panic {
         }
     };
     ($error:expr; $($value:expr),+) => {
-        track_panic!($error, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
+        $crate::track_panic!($error, $crate::trackable_prepare_values_fmt!($($value),+), $($value),+)
     };
     ($error_kind:expr, $message:expr) => {
         {
             use $crate::error::ErrorKindExt;
-            track_panic!($error_kind.cause($message))
+            $crate::track_panic!($error_kind.cause($message))
         }
     };
     ($error:expr, $message:expr; $($value:expr),+) => {
-        track_panic!($error,
-                     concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
+        $crate::track_panic!($error,
+                             concat!($message, "; ", $crate::trackable_prepare_values_fmt!($($value),+)), $($value),+)
     };
     ($error_kind:expr, $($format_arg:tt)+) => {
         {
-            track_panic!($error_kind, format!($($format_arg)+))
+            $crate::track_panic!($error_kind, format!($($format_arg)+))
         }
     };
 }
@@ -535,7 +535,7 @@ macro_rules! trackable_prepare_values_fmt {
         concat!(stringify!($value), "={:?}")
     };
     ($value:expr, $($rest:expr),*) => {
-        concat!(stringify!($value), "={:?}, ", trackable_prepare_values_fmt!($($rest),*))
+        concat!(stringify!($value), "={:?}, ", $crate::trackable_prepare_values_fmt!($($rest),*))
     };
 }
 
