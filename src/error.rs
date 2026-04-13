@@ -79,7 +79,7 @@ pub type BoxError = Box<dyn Error + Send + Sync>;
 pub type BoxErrorKind = Box<dyn ErrorKind + Send + Sync>;
 
 /// `History` type specialized for `TrackableError`.
-pub type History = ::History<Location>;
+pub type History = crate::History<Location>;
 
 /// Built-in `ErrorKind` implementation which represents opaque errors.
 #[derive(Debug, Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Hash)]

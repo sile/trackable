@@ -541,7 +541,7 @@ macro_rules! trackable_prepare_values_fmt {
 
 #[cfg(test)]
 mod test {
-    use error::{ErrorKindExt, Failed, Failure};
+    use crate::error::{ErrorKindExt, Failed, Failure};
 
     #[test]
     fn track_works() {
