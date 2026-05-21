@@ -253,8 +253,8 @@ pub trait ErrorKindExt: ErrorKind + Sized {
     ///   assert_eq!(format!("\nERROR: {}", e).replace('\\', "/"), r#"
     /// ERROR: Kind1
     /// HISTORY:
-    ///   [0] at src/error.rs:17
-    ///   [1] at src/error.rs:20
+    ///   [0] at src/error.rs:16
+    ///   [1] at src/error.rs:19
     /// "#);
     /// }
     /// ```

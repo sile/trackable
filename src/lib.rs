@@ -109,9 +109,9 @@ pub mod result;
 ///
 ///     assert_eq!(format!("\n{}", o.history).replace('\\', "/"), r#"
 /// HISTORY:
-///   [0] at src/lib.rs:23
-///   [1] at src/lib.rs:24 -- Hello
-///   [2] at src/lib.rs:25 -- Hello World!
+///   [0] at src/lib.rs:22
+///   [1] at src/lib.rs:23 -- Hello
+///   [2] at src/lib.rs:24 -- Hello World!
 /// "#);
 /// }
 /// ```
