@@ -7,6 +7,7 @@ homepage = "https://github.com/sile/trackable"
 repository = "https://github.com/sile/trackable"
 readme = "README.md"
 license = "MIT"
+edition = "2021"
 
 [badges]
 coveralls = {repository = "sile/trackable"}
